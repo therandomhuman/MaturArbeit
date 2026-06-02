@@ -5,7 +5,7 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
 #include "ControllerPawn.generated.h"
-class UCapsuleComponent;
+class UCapsuleComponent; //forward declerations to save on compile time
 class USpringArmComponent;
 class UCameraComponent;
 class UInputAction;
@@ -19,11 +19,11 @@ class CAMERAUTIL_API AControllerPawn : public APawn
 	// BaseComponents for the Pawn
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly,Category="Collision", meta = (AllowPrivateAccess = "true"))
 
-	UCapsuleComponent* CapsuleComponent = nullptr;
+	TObjectPtr<UCapsuleComponent> CapsuleComponent = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 
-	USpringArmComponent* SpringArm = nullptr;
+	TObjectPtr<USpringArmComponent> SpringArm = nullptr;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 
@@ -51,7 +51,7 @@ class CAMERAUTIL_API AControllerPawn : public APawn
 	//declare movement comp
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement", meta = (AllowPrivateAccess = "true"))
-	UFloatingPawnMovement* FloatingPawnMovement;
+	TObjectPtr<UFloatingPawnMovement> FloatingPawnMovement;
 public:
 	// Sets default values for this pawn's properties
 	AControllerPawn();

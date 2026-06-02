@@ -24,7 +24,7 @@ class CAMERAUTIL_API ARTSPlayerController : public APlayerController
 
 	//define reference to inputmappingcontext
 	UPROPERTY(EditAnywhere,Category = "Input",meta = (AllowPrivateAccess = "true"))
-	UInputMappingContext* DefaultInputMappingContext;
+	TObjectPtr<UInputMappingContext> DefaultInputMappingContext;
 protected: //only the class itself and children can access protected things
 
 	virtual void SetupInputComponent() override; //virtual void overwrites inherited functions from parent classes
