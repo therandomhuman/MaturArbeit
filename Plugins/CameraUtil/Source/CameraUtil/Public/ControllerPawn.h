@@ -27,11 +27,28 @@ class CAMERAUTIL_API AControllerPawn : public APawn
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
 
-	UCameraComponent* Camera = nullptr;
+	TObjectPtr<UCameraComponent> Camera = nullptr;
+
+	//camera properties
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+
+	float ZoomMult = 2.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+
+	float ZoomMax = 2500.f;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Camera", meta = (AllowPrivateAccess = "true"))
+
+	float ZoomMin = 300.f;
+
+	//declare action for input handling
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> MoveAction = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Input", meta = (AllowPrivateAccess = "true"))
-
-	UInputAction* MoveAction = nullptr;
+	TObjectPtr<UInputAction> ZoomAction = nullptr;
+	//declare movement comp
 
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = "Movement", meta = (AllowPrivateAccess = "true"))
 	UFloatingPawnMovement* FloatingPawnMovement;
@@ -43,7 +60,9 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+	//declare functions for inputs to fire
 	void Move(const FInputActionValue& Value);
+	void Zoom(const FInputActionValue& Value);
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

@@ -65,6 +65,19 @@ void AControllerPawn::Move(const FInputActionValue& Value)
 	}
 }
 
+void AControllerPawn::Zoom(const FInputActionValue& Value)
+{
+	const float ZoomDirection = Value.Get<float>();
+	if (Controller != nullptr)
+	{
+		float DesireOrthoWidth = Camera->OrthoWidth + ZoomDirection * ZoomMult;
+		DesireOrthoWidth = FMath::Clamp<float>(DesireOrthoWidth, ZoomMin, ZoomMax);
+		
+		Camera->OrthoWidth = DesireOrthoWidth;
+
+	}
+}
+
 // Called to bind functionality to input
 void AControllerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
@@ -72,7 +85,10 @@ void AControllerPawn::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 
 	if (UEnhancedInputComponent* EnhancedInputComponent = Cast<UEnhancedInputComponent>(PlayerInputComponent))
 	{
+		//bind input to declared functions
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered,this, &AControllerPawn::Move);
+
+		EnhancedInputComponent->BindAction(ZoomAction, ETriggerEvent::Triggered, this, &AControllerPawn::Zoom);
 	}
 
 }
