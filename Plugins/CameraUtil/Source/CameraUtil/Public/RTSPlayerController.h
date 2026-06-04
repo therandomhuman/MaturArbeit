@@ -11,8 +11,9 @@
 /**
  * 
  */
-
-
+struct FInputActionValue;
+class ARTS_Unit_Base;
+class UInputAction;
 class UInputMappingContext; //forward declaration to save on compile time and generally just good practice
 UCLASS()
 class CAMERAUTIL_API ARTSPlayerController : public APlayerController
@@ -25,8 +26,25 @@ class CAMERAUTIL_API ARTSPlayerController : public APlayerController
 	//define reference to inputmappingcontext
 	UPROPERTY(EditAnywhere,Category = "Input",meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInputMappingContext> DefaultInputMappingContext;
+
+
+private:
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> SelectAction;
+
+	//declare ptr to command action
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Input, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInputAction> CommandAction;
+
+	UPROPERTY()
+
+	TObjectPtr<AActor> SelectedActor = nullptr;
 protected: //only the class itself and children can access protected things
 
 	virtual void SetupInputComponent() override; //virtual void overwrites inherited functions from parent classes
+
+	void SelectHandler(const FInputActionValue& value);
+
+	void CommandHandler(const FInputActionValue& value);
 
 };
