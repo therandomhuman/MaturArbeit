@@ -40,6 +40,7 @@ public class CameraUtil : ModuleRules
 				"SlateCore",
                 "InputCore",
 				"EnhancedInput",
+                "RTS_Utils",
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);
