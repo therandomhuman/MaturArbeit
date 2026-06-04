@@ -6,7 +6,7 @@
 #include "GameFramework/Pawn.h"
 
 //inlcluding my interfaces
-#include "SelectableInterface.h" // not forward declared because I am deriveing the class from this partly
+#include "SelectableInterface.h" // not forward declared because I am deriving the class from this partly
 #include "RTS_CommandInterface.h"
 #include "RTS_Unit_Base.generated.h"
 
