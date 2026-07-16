@@ -11,8 +11,35 @@
 #include "RTS_Unit_Base.generated.h"
 
 class UCapsuleComponent; // forward decleration to save on compile time and good pratice generally
-class USkeletalMeshComponent;
+class UInstancedStaticMeshComponent;
 class UFloatingPawnMovement;
+class UNavigationSystemV1;
+
+//macro call like Uproperty which sets the metadata and such up for engine use
+USTRUCT()//struct to store soldier information
+struct FSoldierPropertyStruct
+{
+	GENERATED_BODY()
+
+	
+	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
+	int UnitHealth = 100;
+
+	//Placeholder Variable for storing soldier names. 
+	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
+	FString UnitName = "Max Mustermann";
+
+
+	//Placeholder Variable for storing soldier type. 
+	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
+	FString UnitType = "Soldier";
+
+	//Variavble to hold relative position in the unit, this isn't an absolute but more of a around here
+	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
+	FVector FormationOffSet;
+};
+
+
 UCLASS()
 class RTS_UTILS_API ARTS_Unit_Base : public APawn, public ISelectableInterface, public IRTS_CommandInterface
 {
@@ -30,11 +57,19 @@ protected:
 	FVector MoveTargetLocation = FVector::ZeroVector;
 	bool bMoving = false;
 	float MoveTolerance = 50.f;
+	//Declare NavigationSystem
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UNavigationSystemV1> NavSys = nullptr;
+
+	//Declare Variable that stores potential FormationOffsets
+	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category = Unit,meta = (AllowPrivateAccess = "true"))
+	TArray<FVector> DefaultFormationOffsets;
+
 private:
 
-	//declare skeletalmesh
+	// Delcaresmth 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
-	TObjectPtr<USkeletalMeshComponent> SkeletalMesh = nullptr;
+	TObjectPtr<UInstancedStaticMeshComponent> IsmComp = nullptr;
 	//declare stat mesh for selection indication
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> SelectionBox = nullptr;
@@ -44,14 +79,29 @@ private:
 	//declare CapsuleComp for Collision
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = Collision, meta =(AllowPrivateAccess = "true"))
 	TObjectPtr<UCapsuleComponent> CapsuleComp = nullptr;
+
+	//declare Array to store Soldier Data, I put it into private because I will use getter and setter functions to sanitize data requests insteadd of direct pulic access
+	UPROPERTY(VisibleAnywhere, Category = Soldiers, meta = (AllowPrivateAccess = "true"))
+	TArray<FSoldierPropertyStruct> SoldierProperties;
+	
+
 public:	
+
+
+
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
+
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
+
+	virtual void OnConstruction(const FTransform& Transform) override;
+
 	void Move();
+
 
 	void SelectActor_Implementation(const bool Select)override;
 	void MoveToLocation_Implementation(const FVector TargetLocation)override;

@@ -4,10 +4,13 @@
 
 #include "RTS_Unit_Base.h"
 #include "Components//CapsuleComponent.h"
-#include "Components//SkeletalMeshComponent.h"
+#include "Components//InstancedStaticMeshComponent.h"
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "AIController.h"
+
+#include "NavigationSystem.h"
+
 // Sets default values
 ARTS_Unit_Base::ARTS_Unit_Base()
 {
@@ -17,9 +20,9 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	RootComponent = CapsuleComp;
 	CapsuleComp->SetCollisionProfileName(UCollisionProfile::Pawn_ProfileName);
 
-	//Create SkelMeshComp
-	SkeletalMesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("SkeletalMeshComp"));
-	SkeletalMesh->SetupAttachment(RootComponent);
+	//Create IsmComp
+	IsmComp = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Main ISM"));
+	IsmComp->SetupAttachment(RootComponent);
 	//setup selection indicator
 	SelectionBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SelectionIndicator"));
 	SelectionBox->SetupAttachment(RootComponent);
@@ -28,6 +31,14 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	//Create FloatingPawnMovComp
 	FloatingPawnMov = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingPawnMovComp"));
 
+
+	//Set defaults for the formation offsets, yes this isn't clean. I sort of don't care
+	//I use emplace instead of add because add first creates the value and then moves or copies it into the array, emplace places it directly, it's functionally the same but emplace is cleaner
+	DefaultFormationOffsets.Emplace(FVector(200, 0, 0));
+	DefaultFormationOffsets.Emplace(FVector(0, 0, 0));
+	DefaultFormationOffsets.Emplace(FVector(0, 200, 0));
+	DefaultFormationOffsets.Emplace(FVector(-200, 0, 0));
+	DefaultFormationOffsets.Emplace(FVector(0, -200, 0));
 }
 
 // Called when the game starts or when spawned
@@ -42,6 +53,49 @@ void ARTS_Unit_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 	Move();
+}
+
+
+void ARTS_Unit_Base::OnConstruction(const FTransform& Transform)
+{
+	Super::OnConstruction(Transform);
+
+	//
+	
+	NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+	TArray<FTransform> Transforms;
+	Transforms.Reserve(5);
+	for (int i = 0; i < 5; ++i)
+	{
+		if (!NavSys)
+		{
+			return;
+		}
+		SoldierProperties.Emplace(FSoldierPropertyStruct());
+
+		SoldierProperties[i].FormationOffSet = DefaultFormationOffsets[i];
+
+		FNavLocation NavPos;
+		FRotator Rot = FRotator::ZeroRotator;
+		FVector Scale(1.0f);
+		FVector Pos;
+		if (NavSys->GetRandomPointInNavigableRadius(GetActorLocation() + SoldierProperties[i].FormationOffSet, 50.f, NavPos))
+		{
+
+
+			Pos = NavPos.Location - GetActorLocation();
+
+		}
+		else
+		{
+			Pos = FVector(0, 0,0);
+		}
+		UE_LOG(LogTemp, Warning, TEXT("Vector Location: %s"), *Pos.ToString());
+		Transforms.Emplace(Rot, Pos, Scale);
+	}
+	IsmComp->ClearInstances();
+	IsmComp->AddInstances(Transforms, true);
+	
 }
 
 // Called to bind functionality to input
@@ -63,7 +117,7 @@ void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 	bMoving = true;
 
 	AAIController* PawnAIController = Cast<AAIController>(GetController());
-	PawnAIController->MoveToLocation(TargetLocation, 50.f);
+	PawnAIController->MoveToLocation(TargetLocation, 50.f,true, true);
 }
 
 void ARTS_Unit_Base::Move()
