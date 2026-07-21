@@ -9,6 +9,9 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "AIController.h"
 
+//Including my Utility Function Libaries 
+#include "Utilities/MovementUtilities.h"
+
 #include "NavigationSystem.h"
 
 // Sets default values
@@ -39,6 +42,17 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	DefaultFormationOffsets.Emplace(FVector(0, 200, 0));
 	DefaultFormationOffsets.Emplace(FVector(-200, 0, 0));
 	DefaultFormationOffsets.Emplace(FVector(0, -200, 0));
+
+
+	//assign the formation offsets to soldiers
+	for (int i = 0; i < 5; ++i)
+	{
+
+		SoldierProperties.Emplace(FSoldierPropertyStruct());
+
+		SoldierProperties[i].FormationOffSet = DefaultFormationOffsets[i];
+	}
+
 }
 
 // Called when the game starts or when spawned
@@ -60,20 +74,19 @@ void ARTS_Unit_Base::OnConstruction(const FTransform& Transform)
 {
 	Super::OnConstruction(Transform);
 
-	//
+
 	
 	NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	TArray<FTransform> Transforms;
+	TArray<FTransform> Transforms = MovementUtilities::DistributeUnitsAtArea(*NavSys, GetActorLocation(), SoldierProperties);
 	Transforms.Reserve(5);
+	/*
 	for (int i = 0; i < 5; ++i)
 	{
 		if (!NavSys)
 		{
 			return;
 		}
-		SoldierProperties.Emplace(FSoldierPropertyStruct());
-
-		SoldierProperties[i].FormationOffSet = DefaultFormationOffsets[i];
+	
 
 		FNavLocation NavPos;
 		FRotator Rot = FRotator::ZeroRotator;
@@ -93,6 +106,8 @@ void ARTS_Unit_Base::OnConstruction(const FTransform& Transform)
 		UE_LOG(LogTemp, Warning, TEXT("Vector Location: %s"), *Pos.ToString());
 		Transforms.Emplace(Rot, Pos, Scale);
 	}
+	*/
+	
 	IsmComp->ClearInstances();
 	IsmComp->AddInstances(Transforms, true);
 	

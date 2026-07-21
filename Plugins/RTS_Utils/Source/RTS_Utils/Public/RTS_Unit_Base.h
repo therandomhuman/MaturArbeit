@@ -8,6 +8,11 @@
 //inlcluding my interfaces
 #include "SelectableInterface.h" // not forward declared because I am deriving the class from this partly
 #include "RTS_CommandInterface.h"
+
+
+
+
+//includde generated engine stuff
 #include "RTS_Unit_Base.generated.h"
 
 class UCapsuleComponent; // forward decleration to save on compile time and good pratice generally
@@ -23,7 +28,7 @@ struct FSoldierPropertyStruct
 
 	
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	int UnitHealth = 100;
+	int32 UnitHealth = 100;
 
 	//Placeholder Variable for storing soldier names. 
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
