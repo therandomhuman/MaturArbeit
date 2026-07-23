@@ -19,6 +19,9 @@ class UCapsuleComponent; // forward decleration to save on compile time and good
 class UInstancedStaticMeshComponent;
 class UFloatingPawnMovement;
 class UNavigationSystemV1;
+class UNavigationQueryFilter;
+class UPathFollowingComponent;
+class AAIController;
 
 //macro call like Uproperty which sets the metadata and such up for engine use
 USTRUCT()//struct to store soldier information
@@ -30,20 +33,27 @@ struct FSoldierPropertyStruct
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	int32 UnitHealth = 100;
 
+	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
+	int32 Index = 0;
+
 	//Placeholder Variable for storing soldier names. 
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	FString UnitName = "Max Mustermann";
 
 
-	//Placeholder Variable for storing soldier type. 
+	//Placeholder Variable for storing soldier type. Will switch to an enum later
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	FString UnitType = "Soldier";
 
 	//Variavble to hold relative position in the unit, this isn't an absolute but more of a around here
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	FVector FormationOffSet;
+
+
 };
 
+struct FPathFollowingResult;
+struct FAIRequestID;
 
 UCLASS()
 class RTS_UTILS_API ARTS_Unit_Base : public APawn, public ISelectableInterface, public IRTS_CommandInterface
@@ -62,6 +72,8 @@ protected:
 	FVector MoveTargetLocation = FVector::ZeroVector;
 	bool bMoving = false;
 	float MoveTolerance = 50.f;
+
+
 	//Declare NavigationSystem
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UNavigationSystemV1> NavSys = nullptr;
@@ -70,9 +82,26 @@ protected:
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category = Unit,meta = (AllowPrivateAccess = "true"))
 	TArray<FVector> DefaultFormationOffsets;
 
+	//Declare NavQueryFilter
+	UPROPERTY(EditDefaultsOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UNavigationQueryFilter> NavigationQuery = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Debug, meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<AActor> DebugPath = nullptr;
+
+
+	//Declare Variables to hold relevant Ai navigation components
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Debug, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UPathFollowingComponent> PathFollowingComp = nullptr;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Debug, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AAIController> AIController = nullptr;
+
+
+
 private:
 
-	// Delcaresmth 
+	// Declare ISM
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInstancedStaticMeshComponent> IsmComp = nullptr;
 	//declare stat mesh for selection indication
@@ -85,10 +114,13 @@ private:
 	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = Collision, meta =(AllowPrivateAccess = "true"))
 	TObjectPtr<UCapsuleComponent> CapsuleComp = nullptr;
 
-	//declare Array to store Soldier Data, I put it into private because I will use getter and setter functions to sanitize data requests insteadd of direct pulic access
+	//declare Array to store Soldier Data
 	UPROPERTY(VisibleAnywhere, Category = Soldiers, meta = (AllowPrivateAccess = "true"))
 	TArray<FSoldierPropertyStruct> SoldierProperties;
 	
+	//Function to bind to delegate to clean up after movement is done
+	void HandleMovementCleanUp(FAIRequestID, const FPathFollowingResult&);
+
 
 public:	
 
@@ -105,9 +137,18 @@ public:
 
 	virtual void OnConstruction(const FTransform& Transform) override;
 
-	void Move();
+	//Hanldes custom per tick movement logic
+	void Move(float DeltaTime);
 
 
+	const TObjectPtr<UInstancedStaticMeshComponent> GetIsm();
+	//Getter Function to get the Tarray of the entire unit, this is non specific, used in e.g the movement module since that needs them all. 
+	const TArray<FSoldierPropertyStruct>& GetUnitdata();
+
+	//Getter Function for getting a specific soldier's data, this requires the caller to know the index
+	const FSoldierPropertyStruct* GetSoldierData(int32 Index);
+	
+	//Declare Interface Implementation
 	void SelectActor_Implementation(const bool Select)override;
 	void MoveToLocation_Implementation(const FVector TargetLocation)override;
 };

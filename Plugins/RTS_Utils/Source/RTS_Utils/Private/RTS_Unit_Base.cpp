@@ -9,10 +9,14 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "AIController.h"
 
+#include "NavMesh/NavMeshPath.h"
+
 //Including my Utility Function Libaries 
 #include "Utilities/MovementUtilities.h"
 
 #include "NavigationSystem.h"
+#include "Navigation/PathFollowingComponent.h"
+#include "NavFilters/NavigationQueryFilter.h"
 
 // Sets default values
 ARTS_Unit_Base::ARTS_Unit_Base()
@@ -53,20 +57,33 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 		SoldierProperties[i].FormationOffSet = DefaultFormationOffsets[i];
 	}
 
+
+
 }
 
 // Called when the game starts or when spawned
 void ARTS_Unit_Base::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	//Fetch controller and pathfollowing component, this cannot be done in the constructor since they aren't assigned during that time.
+	AIController = Cast<AAIController>(GetController());
+	PathFollowingComp = AIController->GetPathFollowingComponent();
+	PathFollowingComp->OnRequestFinished.AddUObject(this, &ARTS_Unit_Base::HandleMovementCleanUp);
+}
+
+
+
+void ARTS_Unit_Base::HandleMovementCleanUp(FAIRequestID RequestId, const FPathFollowingResult& Result)
+{
+	bMoving = false;
+	UE_LOG(LogTemp, Warning, TEXT("Finished Moving"));
 }
 
 // Called every frame
 void ARTS_Unit_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	Move();
+	Move(DeltaTime);
 }
 
 
@@ -77,37 +94,9 @@ void ARTS_Unit_Base::OnConstruction(const FTransform& Transform)
 
 	
 	NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
-	TArray<FTransform> Transforms = MovementUtilities::DistributeUnitsAtArea(*NavSys, GetActorLocation(), SoldierProperties);
-	Transforms.Reserve(5);
-	/*
-	for (int i = 0; i < 5; ++i)
-	{
-		if (!NavSys)
-		{
-			return;
-		}
-	
 
-		FNavLocation NavPos;
-		FRotator Rot = FRotator::ZeroRotator;
-		FVector Scale(1.0f);
-		FVector Pos;
-		if (NavSys->GetRandomPointInNavigableRadius(GetActorLocation() + SoldierProperties[i].FormationOffSet, 50.f, NavPos))
-		{
+	TArray<FTransform> Transforms = MovementUtilities::DistributeUnitsAtArea(NavSys, GetActorLocation(), SoldierProperties);
 
-
-			Pos = NavPos.Location - GetActorLocation();
-
-		}
-		else
-		{
-			Pos = FVector(0, 0,0);
-		}
-		UE_LOG(LogTemp, Warning, TEXT("Vector Location: %s"), *Pos.ToString());
-		Transforms.Emplace(Rot, Pos, Scale);
-	}
-	*/
-	
 	IsmComp->ClearInstances();
 	IsmComp->AddInstances(Transforms, true);
 	
@@ -131,11 +120,24 @@ void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 	MoveTargetLocation = TargetLocation + FVector(0, 0, GetDefaultHalfHeight());
 	bMoving = true;
 
-	AAIController* PawnAIController = Cast<AAIController>(GetController());
-	PawnAIController->MoveToLocation(TargetLocation, 50.f,true, true);
+
+	
+	TObjectPtr<UNavigationPath> NavPath = MovementUtilities::GeneratePathPoints(*NavSys, GetWorld(), GetActorLocation(), MoveTargetLocation, 0.4f, this, NavigationQuery);
+	for (auto Point : NavPath->PathPoints)
+	{
+		
+		GetWorld()->SpawnActor<AActor>(DebugPath, FTransform(FRotator::ZeroRotator, Point, FVector::OneVector));
+		
+	}
+
+
+	FAIMoveRequest MoveReq(GetActorLocation());
+	
+	AIController->RequestMove(MoveReq, NavPath->GetPath());
+
 }
 
-void ARTS_Unit_Base::Move()
+void ARTS_Unit_Base::Move(float DeltaTime)
 {
 
 	if (!bMoving)
@@ -145,13 +147,9 @@ void ARTS_Unit_Base::Move()
 	}
 
 	FVector MoveDirection = (MoveTargetLocation - GetActorLocation());
-	if (MoveDirection.Length() < MoveTolerance)
-	{
-		bMoving = false;
-		return;
-	}
 
 	MoveDirection.Normalize(1);
+
 	//AddMovementInput(MoveDirection, 1.f);
 
 	FRotator DesiredRotation = UKismetMathLibrary::MakeRotFromX(MoveDirection);
@@ -161,3 +159,24 @@ void ARTS_Unit_Base::Move()
 	FRotator NewRoation = FMath::RInterpTo(GetActorRotation(), DesiredRotation, GetWorld()->GetDeltaSeconds(),5.f);
 	SetActorRotation(NewRoation);
 }
+
+
+const TObjectPtr<UInstancedStaticMeshComponent> ARTS_Unit_Base::GetIsm()
+{
+	return IsmComp;
+}
+
+const TArray<FSoldierPropertyStruct>& ARTS_Unit_Base::GetUnitdata()
+{
+	return SoldierProperties;
+}
+
+const FSoldierPropertyStruct* ARTS_Unit_Base::GetSoldierData(int32 Index)
+{
+	if (Index <= SoldierProperties.Num())
+	{
+		return &SoldierProperties[Index];
+	}
+	return nullptr;
+}
+
