@@ -24,6 +24,15 @@ class UPathFollowingComponent;
 class AAIController;
 
 //macro call like Uproperty which sets the metadata and such up for engine use
+
+USTRUCT()//struct to store pathfinding modifications for soldiers
+struct FPathfindingModification
+{
+	GENERATED_BODY()
+	FVector AvoidanceModification = FVector::ZeroVector;
+
+};
+
 USTRUCT()//struct to store soldier information
 struct FSoldierPropertyStruct
 {
@@ -49,7 +58,8 @@ struct FSoldierPropertyStruct
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	FVector FormationOffSet;
 
-
+	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
+	FPathfindingModification PathMods;
 };
 
 struct FPathFollowingResult;
@@ -80,7 +90,7 @@ protected:
 
 	//Declare Variable that stores potential FormationOffsets
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category = Unit,meta = (AllowPrivateAccess = "true"))
-	TArray<FVector> DefaultFormationOffsets;
+	TArray<FVector> DefaultFormationOffsets = TArray<FVector>();
 
 	//Declare NavQueryFilter
 	UPROPERTY(EditDefaultsOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
@@ -110,9 +120,6 @@ private:
 	//declare floating pawn movement  for movement
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFloatingPawnMovement> FloatingPawnMov = nullptr;
-	//declare CapsuleComp for Collision
-	UPROPERTY(VisibleAnywhere,BlueprintReadOnly,Category = Collision, meta =(AllowPrivateAccess = "true"))
-	TObjectPtr<UCapsuleComponent> CapsuleComp = nullptr;
 
 	//declare Array to store Soldier Data
 	UPROPERTY(VisibleAnywhere, Category = Soldiers, meta = (AllowPrivateAccess = "true"))
@@ -126,6 +133,9 @@ public:
 
 
 
+	//declare CapsuleComp for Collision
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UCapsuleComponent> CapsuleComp = nullptr;
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -141,12 +151,18 @@ public:
 	void Move(float DeltaTime);
 
 
+	//Getter Function for the current SharedNavPtr
+	const UPathFollowingComponent& GetPathFollowingComp();
+
 	const TObjectPtr<UInstancedStaticMeshComponent> GetIsm();
 	//Getter Function to get the Tarray of the entire unit, this is non specific, used in e.g the movement module since that needs them all. 
 	const TArray<FSoldierPropertyStruct>& GetUnitdata();
 
+
 	//Getter Function for getting a specific soldier's data, this requires the caller to know the index
 	const FSoldierPropertyStruct* GetSoldierData(int32 Index);
+	//Setter Function for setting a specific soldier's data, this requires the caller to know the index
+	void  SetSoldierData(int32 Index, FSoldierPropertyStruct);
 	
 	//Declare Interface Implementation
 	void SelectActor_Implementation(const bool Select)override;

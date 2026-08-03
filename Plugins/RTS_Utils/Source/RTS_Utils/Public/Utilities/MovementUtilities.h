@@ -26,7 +26,7 @@ public:
 
 	static TObjectPtr<UNavigationPath> GeneratePathPoints(UNavigationSystemV1& NavSys, UObject* WorldContext,const FVector& PathStart, const FVector& PathEnd, const float OffSetDistance, AActor* PathFindingContext, TSubclassOf <UNavigationQueryFilter> FilterClass);
 
-	static TArray<FTransform> CalculateMovementTransform(TObjectPtr<ARTS_Unit_Base> Unit);
+	static TArray<FTransform> CalculateMovementTransform(TObjectPtr<ARTS_Unit_Base> Unit, float DeltaTime);
 
 
 };

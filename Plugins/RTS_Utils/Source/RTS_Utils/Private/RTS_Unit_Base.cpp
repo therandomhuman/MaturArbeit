@@ -21,6 +21,7 @@
 // Sets default values
 ARTS_Unit_Base::ARTS_Unit_Base()
 {
+
  	// Set this pawn to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	CapsuleComp = CreateDefaultSubobject<UCapsuleComponent>(TEXT("CapulseComponent"));
@@ -38,23 +39,24 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	//Create FloatingPawnMovComp
 	FloatingPawnMov = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingPawnMovComp"));
 
-
 	//Set defaults for the formation offsets, yes this isn't clean. I sort of don't care
 	//I use emplace instead of add because add first creates the value and then moves or copies it into the array, emplace places it directly, it's functionally the same but emplace is cleaner
-	DefaultFormationOffsets.Emplace(FVector(200, 0, 0));
-	DefaultFormationOffsets.Emplace(FVector(0, 0, 0));
-	DefaultFormationOffsets.Emplace(FVector(0, 200, 0));
-	DefaultFormationOffsets.Emplace(FVector(-200, 0, 0));
-	DefaultFormationOffsets.Emplace(FVector(0, -200, 0));
+	DefaultFormationOffsets.Emplace(FVector(200, 0, -CapsuleComp->GetScaledCapsuleHalfHeight()));
+	DefaultFormationOffsets.Emplace(FVector(0, 0, -CapsuleComp->GetScaledCapsuleHalfHeight()));
+	DefaultFormationOffsets.Emplace(FVector(0, 200, -CapsuleComp->GetScaledCapsuleHalfHeight()));
+	DefaultFormationOffsets.Emplace(FVector(-200, 0, -CapsuleComp->GetScaledCapsuleHalfHeight()));
+	DefaultFormationOffsets.Emplace(FVector(0, -200, -CapsuleComp->GetScaledCapsuleHalfHeight()));
 
 
 	//assign the formation offsets to soldiers
+	SoldierProperties = TArray<FSoldierPropertyStruct>();
 	for (int i = 0; i < 5; ++i)
 	{
 
 		SoldierProperties.Emplace(FSoldierPropertyStruct());
 
 		SoldierProperties[i].FormationOffSet = DefaultFormationOffsets[i];
+		SoldierProperties[i].Index = i;
 	}
 
 
@@ -75,8 +77,12 @@ void ARTS_Unit_Base::BeginPlay()
 
 void ARTS_Unit_Base::HandleMovementCleanUp(FAIRequestID RequestId, const FPathFollowingResult& Result)
 {
-	bMoving = false;
-	UE_LOG(LogTemp, Warning, TEXT("Finished Moving"));
+	if (Result.IsSuccess())
+	{
+		bMoving = false;
+		UE_LOG(LogTemp, Warning, TEXT("Finished Moving"));
+	}
+
 }
 
 // Called every frame
@@ -117,7 +123,7 @@ void ARTS_Unit_Base::SelectActor_Implementation(const bool Select)
 
 void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 {
-	MoveTargetLocation = TargetLocation + FVector(0, 0, GetDefaultHalfHeight());
+	MoveTargetLocation = TargetLocation;
 	bMoving = true;
 
 
@@ -135,6 +141,7 @@ void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 	
 	AIController->RequestMove(MoveReq, NavPath->GetPath());
 
+
 }
 
 void ARTS_Unit_Base::Move(float DeltaTime)
@@ -146,20 +153,25 @@ void ARTS_Unit_Base::Move(float DeltaTime)
 
 	}
 
-	FVector MoveDirection = (MoveTargetLocation - GetActorLocation());
-
-	MoveDirection.Normalize(1);
-
+	
 	//AddMovementInput(MoveDirection, 1.f);
-
-	FRotator DesiredRotation = UKismetMathLibrary::MakeRotFromX(MoveDirection);
+	FRotator DesiredRotation = UKismetMathLibrary::MakeRotFromXY(GetVelocity(), GetVelocity());
 	DesiredRotation.Pitch = 0;
 	DesiredRotation.Roll = 0;
-	
-	FRotator NewRoation = FMath::RInterpTo(GetActorRotation(), DesiredRotation, GetWorld()->GetDeltaSeconds(),5.f);
-	SetActorRotation(NewRoation);
+
+	//FRotator NewRoation = FMath::RInterpTo(GetActorRotation(), DesiredRotation, GetWorld()->GetDeltaSeconds(), 5.f);
+	//SetActorRotation(NewRoation);
+	TArray<FTransform> NewTransform = MovementUtilities::CalculateMovementTransform(this, DeltaTime);
+	IsmComp->BatchUpdateInstancesTransforms(0, NewTransform);
+	IsmComp->MarkRenderStateDirty();
+
 }
 
+
+const UPathFollowingComponent& ARTS_Unit_Base::GetPathFollowingComp()
+{
+	return *PathFollowingComp;
+}
 
 const TObjectPtr<UInstancedStaticMeshComponent> ARTS_Unit_Base::GetIsm()
 {
@@ -178,5 +190,10 @@ const FSoldierPropertyStruct* ARTS_Unit_Base::GetSoldierData(int32 Index)
 		return &SoldierProperties[Index];
 	}
 	return nullptr;
+}
+
+void ARTS_Unit_Base::SetSoldierData(int32 Index, FSoldierPropertyStruct NewStruc)
+{
+	SoldierProperties[Index] = NewStruc;
 }
 
