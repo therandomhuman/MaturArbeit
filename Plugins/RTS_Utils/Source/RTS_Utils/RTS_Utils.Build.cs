@@ -26,6 +26,7 @@ public class RTS_Utils : ModuleRules
 			new string[]
 			{
 				"Core",
+                "GameplayTags"
 				// ... add other public dependencies that you statically link with here ...
 			}
 			);
@@ -39,7 +40,8 @@ public class RTS_Utils : ModuleRules
 				"Slate",
 				"SlateCore",
 				"AIModule",
-                "NavigationSystem"
+                "NavigationSystem",
+         
 		
 				// ... add private dependencies that you statically link with here ...	
 			}

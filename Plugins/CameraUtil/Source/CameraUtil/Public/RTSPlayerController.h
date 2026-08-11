@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/PlayerController.h"
+#include "GameplayTagAssetInterface.h"
+
 #include "RTSPlayerController.generated.h"
 
 
@@ -11,6 +13,7 @@
 /**
  * 
  */
+
 struct FInputActionValue;
 class ARTS_Unit_Base;
 class UInputAction;
@@ -39,6 +42,9 @@ private:
 	UPROPERTY()
 
 	TObjectPtr<AActor> SelectedActor = nullptr;
+
+	UPROPERTY()
+	FGameplayTagContainer SelectedActorTags;
 protected: //only the class itself and children can access protected things
 
 	virtual void SetupInputComponent() override; //virtual void overwrites inherited functions from parent classes

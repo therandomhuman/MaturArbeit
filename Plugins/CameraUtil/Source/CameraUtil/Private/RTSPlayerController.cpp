@@ -8,6 +8,8 @@
 #include "InputActionValue.h"
 #include "RTS_Unit_Base.h"
 
+
+
 ARTSPlayerController::ARTSPlayerController()
 {
 
@@ -40,6 +42,7 @@ void ARTSPlayerController::SetupInputComponent()
 		EnhancedInputComponent->BindAction(CommandAction, ETriggerEvent::Completed, this, &ARTSPlayerController::CommandHandler);
 
 	}
+
 }
 
 void ARTSPlayerController::SelectHandler(const FInputActionValue& value)
@@ -63,6 +66,15 @@ void ARTSPlayerController::SelectHandler(const FInputActionValue& value)
 		if (SelectedActor->GetClass()->ImplementsInterface(USelectableInterface::StaticClass()))
 		{ 
 			ISelectableInterface::Execute_SelectActor(SelectedActor, true);
+
+			//collect tags from the new selected actor, used for commanding later
+			IGameplayTagAssetInterface* SelectedActorTagInter = Cast<IGameplayTagAssetInterface>(SelectedActor);
+			if (!SelectedActorTagInter)
+			{
+				return;
+			}
+			SelectedActorTagInter->GetOwnedGameplayTags(SelectedActorTags);
+
 		}
 
 	}
@@ -79,11 +91,25 @@ void ARTSPlayerController::CommandHandler(const FInputActionValue& value)
 	{ 
 		FHitResult HitResult;
 		GetHitResultUnderCursor(ECollisionChannel::ECC_Camera, false, HitResult);
-		if (!HitResult.bBlockingHit) //check if the raycast hit smth, I prefer to do them like this to prevent nesting my code too much
+		if (HitResult.bBlockingHit) //check if the raycast hit smth, I prefer to do them like this to prevent nesting my code too much
 		{
-			return;
+			IGameplayTagAssetInterface* HitActor = Cast<IGameplayTagAssetInterface>(HitResult.GetActor());
+			if (!HitActor)
+			{
+				IRTS_CommandInterface::Execute_MoveToLocation(SelectedActor, HitResult.Location);
+				return;
+			}
+			FGameplayTagContainer HitTags;
+			HitActor->GetOwnedGameplayTags(HitTags);
+			
+			if (HitTags.GetByIndex(0).RequestDirectParent() != SelectedActorTags.GetByIndex(0).RequestDirectParent())
+			{
+				IRTS_CommandInterface::Execute_AttackObject(SelectedActor, HitResult.GetActor());
+			}
+				
+	
 		}
-		IRTS_CommandInterface::Execute_MoveToLocation(SelectedActor, HitResult.Location);
+		
 	}
 }
 

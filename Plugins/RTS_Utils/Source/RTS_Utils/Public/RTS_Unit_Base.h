@@ -8,7 +8,7 @@
 //inlcluding my interfaces
 #include "SelectableInterface.h" // not forward declared because I am deriving the class from this partly
 #include "RTS_CommandInterface.h"
-
+#include "GameplayTagAssetInterface.h"
 
 
 
@@ -22,51 +22,22 @@ class UNavigationSystemV1;
 class UNavigationQueryFilter;
 class UPathFollowingComponent;
 class AAIController;
+class UGunHandler;
+class UWeaponData;
+
 
 //macro call like Uproperty which sets the metadata and such up for engine use
 
-USTRUCT()//struct to store pathfinding modifications for soldiers
-struct FPathfindingModification
-{
-	GENERATED_BODY()
-	FVector AvoidanceModification = FVector::ZeroVector;
+struct FPathfindingModification;
 
-};
-
-USTRUCT()//struct to store soldier information
-struct FSoldierPropertyStruct
-{
-	GENERATED_BODY()
-
-	
-	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	int32 UnitHealth = 100;
-
-	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	int32 Index = 0;
-
-	//Placeholder Variable for storing soldier names. 
-	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	FString UnitName = "Max Mustermann";
-
-
-	//Placeholder Variable for storing soldier type. Will switch to an enum later
-	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	FString UnitType = "Soldier";
-
-	//Variavble to hold relative position in the unit, this isn't an absolute but more of a around here
-	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	FVector FormationOffSet;
-
-	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
-	FPathfindingModification PathMods;
-};
+struct FSoldierPropertyStruct;
 
 struct FPathFollowingResult;
 struct FAIRequestID;
 
+enum class EUnitType;
 UCLASS()
-class RTS_UTILS_API ARTS_Unit_Base : public APawn, public ISelectableInterface, public IRTS_CommandInterface
+class RTS_UTILS_API ARTS_Unit_Base : public APawn, public ISelectableInterface, public IRTS_CommandInterface, public IGameplayTagAssetInterface
 {
 	GENERATED_BODY()
 
@@ -84,6 +55,11 @@ protected:
 	float MoveTolerance = 50.f;
 
 
+	//stuff for atttackng
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = AttackTarget, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AActor> TargetActor = nullptr;
+
 	//Declare NavigationSystem
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UNavigationSystemV1> NavSys = nullptr;
@@ -91,6 +67,8 @@ protected:
 	//Declare Variable that stores potential FormationOffsets
 	UPROPERTY(EditDefaultsOnly,BlueprintReadOnly,Category = Unit,meta = (AllowPrivateAccess = "true"))
 	TArray<FVector> DefaultFormationOffsets = TArray<FVector>();
+
+
 
 	//Declare NavQueryFilter
 	UPROPERTY(EditDefaultsOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
@@ -109,11 +87,20 @@ protected:
 
 
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = GameplayTags, meta = (AllowPrivateAccess = "true"))
+	FGameplayTagContainer GameplayTags;
+
+
+
+
+
 private:
 
 	// Declare ISM
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInstancedStaticMeshComponent> IsmComp = nullptr;
+
+
 	//declare stat mesh for selection indication
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UStaticMeshComponent> SelectionBox = nullptr;
@@ -121,21 +108,52 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UFloatingPawnMovement> FloatingPawnMov = nullptr;
 
+
+	//declare comp that handles gun logic
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UGunHandler> GunHandler = nullptr;
+
 	//declare Array to store Soldier Data
-	UPROPERTY(VisibleAnywhere, Category = Soldiers, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(EditAnywhere, Category = Soldiers, meta = (AllowPrivateAccess = "true"))
 	TArray<FSoldierPropertyStruct> SoldierProperties;
+
+	
 	
 	//Function to bind to delegate to clean up after movement is done
 	void HandleMovementCleanUp(FAIRequestID, const FPathFollowingResult&);
 
 
+	//Function to bind to delegate to clean up after movement is done
+	void RunAttackCheck();
+
+
+
 public:	
 
+	//Delcare ISM for weapons
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> ISMWeaponSoldier = nullptr;
 
+	//declare slots for default weapons
+	UPROPERTY(EditDefaultsOnly, Category = "Unit|Equipment", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UWeaponData> SoldierWeapon = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Unit|Equipment", meta = (AllowPrivateAccess = "true"))
+	TSubclassOf<UWeaponData> OfficerWeapon = nullptr;
+	//this one only gets used if the officer has a seperate weapon from the soldiers
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> ISMWeaponOfficer = nullptr;
 
 	//declare CapsuleComp for Collision
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Collision, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UCapsuleComponent> CapsuleComp = nullptr;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
+	EUnitType UnitType;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
+	int32 test = 1;
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -156,7 +174,7 @@ public:
 
 	const TObjectPtr<UInstancedStaticMeshComponent> GetIsm();
 	//Getter Function to get the Tarray of the entire unit, this is non specific, used in e.g the movement module since that needs them all. 
-	const TArray<FSoldierPropertyStruct>& GetUnitdata();
+	const TArray<FSoldierPropertyStruct> GetUnitdata();
 
 
 	//Getter Function for getting a specific soldier's data, this requires the caller to know the index
@@ -166,5 +184,12 @@ public:
 	
 	//Declare Interface Implementation
 	void SelectActor_Implementation(const bool Select)override;
+
 	void MoveToLocation_Implementation(const FVector TargetLocation)override;
+
+	void AttackObject_Implementation(AActor* NewTargetActor)override;
+
+	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
+
+	
 };

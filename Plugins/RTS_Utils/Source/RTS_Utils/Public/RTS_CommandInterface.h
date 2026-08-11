@@ -24,4 +24,6 @@ class RTS_UTILS_API IRTS_CommandInterface
 public:
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent,Category = "Command interface")
 	void MoveToLocation(const FVector TargetLocation);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent, Category = "Command interface")
+	void AttackObject( AActor* ActorToAttack);
 };

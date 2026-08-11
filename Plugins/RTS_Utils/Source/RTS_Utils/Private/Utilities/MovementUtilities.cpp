@@ -18,6 +18,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
 
+#include "Utilities/CommonUnitDataTypes.h"
 
 
 MovementUtilities::MovementUtilities()
@@ -108,7 +109,7 @@ TObjectPtr<UNavigationPath> MovementUtilities::GeneratePathPoints(UNavigationSys
 
 	 TraceParams.AddIgnoredActor(Unit);
 
-	 for (auto i : UnitInformation)
+	 for (auto &i : UnitInformation)
 	 {
 		  SoldierAvoidance = FVector::ZeroVector;
 		  TargetVector = FVector::ZeroVector;

@@ -41,6 +41,7 @@ public class CameraUtil : ModuleRules
                 "InputCore",
 				"EnhancedInput",
                 "RTS_Utils",
+                "GameplayTags"
 				// ... add private dependencies that you statically link with here ...	
 			}
 			);

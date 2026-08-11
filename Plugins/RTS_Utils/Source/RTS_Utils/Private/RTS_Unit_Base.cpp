@@ -11,8 +11,15 @@
 
 #include "NavMesh/NavMeshPath.h"
 
+
+
 //Including my Utility Function Libaries 
 #include "Utilities/MovementUtilities.h"
+//Include the common data types
+#include "Utilities/CommonUnitDataTypes.h"
+
+//include my custom gunhandler comp
+#include "GunHandler.h"
 
 #include "NavigationSystem.h"
 #include "Navigation/PathFollowingComponent.h"
@@ -31,6 +38,12 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	//Create IsmComp
 	IsmComp = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Main ISM"));
 	IsmComp->SetupAttachment(RootComponent);
+
+	//create gun ism
+	ISMWeaponSoldier = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Soldier ISM"));
+	ISMWeaponSoldier->SetupAttachment(RootComponent);
+	ISMWeaponOfficer = CreateDefaultSubobject<UInstancedStaticMeshComponent>(TEXT("Officer ISM"));
+	ISMWeaponOfficer->SetupAttachment(RootComponent);
 	//setup selection indicator
 	SelectionBox = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("SelectionIndicator"));
 	SelectionBox->SetupAttachment(RootComponent);
@@ -39,6 +52,10 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	//Create FloatingPawnMovComp
 	FloatingPawnMov = CreateDefaultSubobject<UFloatingPawnMovement>(TEXT("FloatingPawnMovComp"));
 
+
+	GunHandler = CreateDefaultSubobject<UGunHandler>(TEXT("GunHandler"));
+
+	GunHandler->SetUpComponent();
 	//Set defaults for the formation offsets, yes this isn't clean. I sort of don't care
 	//I use emplace instead of add because add first creates the value and then moves or copies it into the array, emplace places it directly, it's functionally the same but emplace is cleaner
 	DefaultFormationOffsets.Emplace(FVector(200, 0, -CapsuleComp->GetScaledCapsuleHalfHeight()));
@@ -48,12 +65,14 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	DefaultFormationOffsets.Emplace(FVector(0, -200, -CapsuleComp->GetScaledCapsuleHalfHeight()));
 
 
+
+
 	//assign the formation offsets to soldiers
-	SoldierProperties = TArray<FSoldierPropertyStruct>();
-	for (int i = 0; i < 5; ++i)
+
+	for (int32 i = 0; i < 5; ++i)
 	{
 
-		SoldierProperties.Emplace(FSoldierPropertyStruct());
+		SoldierProperties.EmplaceAt(i,FSoldierPropertyStruct());
 
 		SoldierProperties[i].FormationOffSet = DefaultFormationOffsets[i];
 		SoldierProperties[i].Index = i;
@@ -85,11 +104,47 @@ void ARTS_Unit_Base::HandleMovementCleanUp(FAIRequestID RequestId, const FPathFo
 
 }
 
+void ARTS_Unit_Base::RunAttackCheck()
+{
+	//just a simple loop that goes through all soldiers, checks if they are able to fire/need to reload and if yes, does so. 
+	for (auto &FiringSoldier : SoldierProperties)
+	{
+		if (FiringSoldier.bBusy)
+		{
+			continue;
+			//just skips a loop if the unit is "busy", that mostly means reloading, but I kept it more ambigious for other usecases
+		}
+		if (FiringSoldier.SoldierWeapon.CurrentAmmo > 0)
+		{
+			if (FiringSoldier.SoldierWeapon.bCanFire)
+				{
+
+					GunHandler->FireGun(FiringSoldier);
+				}
+			
+		}
+		else
+		{
+			GunHandler->Reload(FiringSoldier);
+		}
+		
+			
+
+	}
+}
+
 // Called every frame
 void ARTS_Unit_Base::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	Move(DeltaTime);
+	if (bMoving)
+	{
+		Move(DeltaTime);
+	}else if (TargetActor != nullptr)
+	{
+		RunAttackCheck();
+	}
+	
 }
 
 
@@ -103,9 +158,13 @@ void ARTS_Unit_Base::OnConstruction(const FTransform& Transform)
 
 	TArray<FTransform> Transforms = MovementUtilities::DistributeUnitsAtArea(NavSys, GetActorLocation(), SoldierProperties);
 
-	IsmComp->ClearInstances();
+	IsmComp->ClearInstances();      
 	IsmComp->AddInstances(Transforms, true);
-	
+	for (auto &i: SoldierProperties)
+	{
+		i.SoldierWeapon.CurrentAmmo = i.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->MaxAmmo;
+	}
+	SoldierProperties = GunHandler->SetUpGuns();
 }
 
 // Called to bind functionality to input
@@ -144,6 +203,20 @@ void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 
 }
 
+void ARTS_Unit_Base::AttackObject_Implementation(AActor* NewTargetActor)
+{
+
+	AIController->StopMovement();
+	bMoving = false;
+	TargetActor = NewTargetActor;
+}
+
+
+void ARTS_Unit_Base::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const
+{
+	TagContainer.AppendTags(GameplayTags);
+}
+
 void ARTS_Unit_Base::Move(float DeltaTime)
 {
 
@@ -164,7 +237,7 @@ void ARTS_Unit_Base::Move(float DeltaTime)
 	TArray<FTransform> NewTransform = MovementUtilities::CalculateMovementTransform(this, DeltaTime);
 	IsmComp->BatchUpdateInstancesTransforms(0, NewTransform);
 	IsmComp->MarkRenderStateDirty();
-
+	GunHandler->UpdateGuns();
 }
 
 
@@ -178,7 +251,7 @@ const TObjectPtr<UInstancedStaticMeshComponent> ARTS_Unit_Base::GetIsm()
 	return IsmComp;
 }
 
-const TArray<FSoldierPropertyStruct>& ARTS_Unit_Base::GetUnitdata()
+const TArray<FSoldierPropertyStruct> ARTS_Unit_Base::GetUnitdata()
 {
 	return SoldierProperties;
 }
