@@ -34,4 +34,15 @@ void ATargetDummy::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) con
 	TagContainer.AppendTags(GameplayTags);
 }
 
+void ATargetDummy::TakeDamage(AActor* Causer, int32 Damage)
+{
+
+	UE_LOG(LogTemp,Warning, TEXT("EEEEE"))
+}
+
+void ATargetDummy::TakeDamage(AActor* Cause, int32 index, int32 Damage)
+{
+	UE_LOG(LogTemp, Warning, TEXT("EEEEE%i" ),index)
+}
+
 

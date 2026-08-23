@@ -94,6 +94,8 @@ void ARTS_Unit_Base::BeginPlay()
 
 
 
+
+
 void ARTS_Unit_Base::HandleMovementCleanUp(FAIRequestID RequestId, const FPathFollowingResult& Result)
 {
 	if (Result.IsSuccess())
@@ -119,7 +121,7 @@ void ARTS_Unit_Base::RunAttackCheck()
 			if (FiringSoldier.SoldierWeapon.bCanFire)
 				{
 
-					GunHandler->FireGun(FiringSoldier);
+					GunHandler->FireGun(FiringSoldier,TargetActor);
 				}
 			
 		}
@@ -182,6 +184,7 @@ void ARTS_Unit_Base::SelectActor_Implementation(const bool Select)
 
 void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 {
+	TargetActor = nullptr;
 	MoveTargetLocation = TargetLocation;
 	bMoving = true;
 
@@ -209,6 +212,7 @@ void ARTS_Unit_Base::AttackObject_Implementation(AActor* NewTargetActor)
 	AIController->StopMovement();
 	bMoving = false;
 	TargetActor = NewTargetActor;
+	GunHandler->SetUpTarget(NewTargetActor);
 }
 
 
@@ -217,6 +221,41 @@ void ARTS_Unit_Base::GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) c
 	TagContainer.AppendTags(GameplayTags);
 }
 
+//health system and damage handling
+void ARTS_Unit_Base::TakeDamage(AActor* Causer, int32 Index, int32 Damage)
+{
+	UE_LOG(LogTemp, Warning, TEXT("Dammage Received%i"), Index)
+	FSoldierPropertyStruct& HitSoldier = SoldierProperties[Index];
+	HitSoldier.UnitHealth -= Damage;
+	if (HitSoldier.UnitHealth <= 0)
+	{
+		RemoveDeadSoldier(HitSoldier);
+	}
+}
+
+
+void ARTS_Unit_Base::RemoveDeadSoldier(FSoldierPropertyStruct& DeadSoldier)
+{
+	UE_LOG(LogTemp, Warning, TEXT("EE%i"), DeadSoldier.Index)
+	UE_LOG(LogTemp, Warning, TEXT("EE%i"), SoldierProperties.Num())
+	if (DeadSoldier.Index+1 < SoldierProperties.Num())
+	{
+		for (int i = DeadSoldier.Index+1; i < SoldierProperties.Num() ; ++i)
+		{
+			SoldierProperties[i].Index -= 1;
+			//check if they use the same ISM to store visuals, if yes then also fix their index in the weapon ISM
+			if (SoldierProperties[i].SoldierWeapon.WeaponISM == DeadSoldier.SoldierWeapon.WeaponISM)
+			{
+				SoldierProperties[i].SoldierWeapon.Index -= 1;
+			}
+		}
+	}
+	DeadSoldier.SoldierWeapon.WeaponISM->RemoveInstance(DeadSoldier.SoldierWeapon.Index);
+	SoldierProperties.RemoveAt(DeadSoldier.Index);
+	IsmComp->RemoveInstance(DeadSoldier.Index);
+}
+
+//move functionality
 void ARTS_Unit_Base::Move(float DeltaTime)
 {
 

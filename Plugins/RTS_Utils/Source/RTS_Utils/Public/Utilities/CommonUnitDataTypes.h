@@ -10,7 +10,7 @@
 #include "CommonUnitDataTypes.generated.h"
 
 //This script includes all the common data types the unit uses, they're seperated from the unit script for easier readability and so that if a script only needs to know the data type it doesn't have to include the entire unit script.
-
+class UInstancedStaticMeshComponent;
 
 UENUM()
 enum class EUnitType
@@ -52,7 +52,9 @@ struct FGunData {
 	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
 	bool bCanFire = true;
 
-
+	//to store the ism that stores the visuals, easier than having to search it every time I want to edit
+	UPROPERTY(VisibleAnywhere, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> WeaponISM = nullptr;
 
 };
 
@@ -69,6 +71,7 @@ struct FSoldierPropertyStruct
 	UPROPERTY(EditDefaultsOnly, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	int32 UnitHealth = 100;
 
+	//array index in the ISM
 	UPROPERTY(VisibleAnywhere, Category = Soldier, meta = (AllowPrivateAccess = "true"))
 	int32 Index = 0;
 

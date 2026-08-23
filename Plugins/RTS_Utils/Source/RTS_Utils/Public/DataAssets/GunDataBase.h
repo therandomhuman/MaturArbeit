@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "Engine/DataAsset.h"
+
+#include "WeaponSystem/BaseProjectile.h"
+
 #include "GunDataBase.generated.h"
 
 
@@ -37,4 +40,17 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings")
 	float ReloadTime;
+
+
+
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Projectile")
+	TSubclassOf<ABaseProjectile> ProjectileVisual;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Projectile")
+	float Gravity;
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Projectile")
+	float MuzzleVelocity;
+
 };

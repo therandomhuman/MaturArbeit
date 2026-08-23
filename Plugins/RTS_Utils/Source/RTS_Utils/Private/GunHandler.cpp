@@ -4,7 +4,10 @@
 #include "GunHandler.h"
 #include "RTS_Unit_Base.h"
 #include "Utilities/CommonUnitDataTypes.h"
+#include "WeaponSystem/BaseProjectile.h"
 #include  "Components//InstancedStaticMeshComponent.h"
+
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
 UGunHandler::UGunHandler()
@@ -36,8 +39,85 @@ void UGunHandler::SetCanFire(FSoldierPropertyStruct& FiringSoldier)
 	Cast<ARTS_Unit_Base>(GetOwner())->SetSoldierData(FiringSoldier.Index, FiringSoldier);
 }
 
-void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier)
+void UGunHandler::SetUpTarget(AActor* Target)
 {
+	//set up target
+	IGameplayTagAssetInterface* SelectedActorTagInter = Cast<IGameplayTagAssetInterface>(Target);
+	if (!SelectedActorTagInter)
+	{
+		return;
+	}
+	FGameplayTagContainer TargetTags;
+	SelectedActorTagInter->GetOwnedGameplayTags(TargetTags);
+
+
+	for (auto Tag : TargetTags)
+	{
+		if (Tag.MatchesTag(CompareTag))
+		{
+			if (Tag.GetTagLeafName() == FName("Unit"))
+			{
+				//cache this stuff later
+				TargetUnit = Cast<ARTS_Unit_Base>(Target);
+				TargetedISM  = TargetUnit->GetIsm();
+				bIsUnit = true;
+			}
+			else
+			{
+	
+			}
+		}
+	}
+}
+
+void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
+{
+
+
+	FVector TargetPos;
+
+			if (bIsUnit)
+			{ 
+			//cache this stuff later
+
+				FTransform EnemyUnitPos;
+				TargetedISM->GetInstanceTransform(UKismetMathLibrary::RandomIntegerInRange(0, TargetedISM->GetInstanceCount() - 1), EnemyUnitPos, true);
+				TargetPos = EnemyUnitPos.GetLocation();
+			}
+			else
+			{
+				TargetPos = Target->GetActorLocation();
+			}
+
+
+	//spawning the projectile
+	FActorSpawnParameters SpawnParams;
+	ARTS_Unit_Base* Owner = Cast<ARTS_Unit_Base>(GetOwner());
+	SpawnParams.Instigator = Owner;
+
+	//get unit positon
+	FTransform UnitTransform;
+	Owner->GetIsm()->GetInstanceTransform(FiringSoldier.Index, UnitTransform, true);
+	FVector UnitPos = UnitTransform.GetLocation() + FVector(0, 0, 25);
+
+
+	//calculate right fly direction
+	FVector DirectionVector =   TargetPos + FVector(0,0,5) - UnitPos;
+	FRotator FlyDirection = UKismetMathLibrary::MakeRotFromXY(DirectionVector, DirectionVector);
+	AActor* NewProjAc = GetWorld()->SpawnActor<ABaseProjectile>(FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->ProjectileVisual, UnitPos, FlyDirection, SpawnParams);
+
+	if (NewProjAc == nullptr)
+	{
+		return;
+	}
+	ABaseProjectile* NewProjectile = Cast<ABaseProjectile>(NewProjAc);
+	if (NewProjectile == nullptr)
+	{
+		return;
+	}
+	UWeaponData* DefObject = FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>();
+	NewProjectile->SetUpNewProjectile(DefObject->MuzzleVelocity, DefObject->Gravity, DefObject->Damage);
+
 	//fire visuals here
 	FiringSoldier.SoldierWeapon.bCanFire = false;
 	FiringSoldier.SoldierWeapon.CurrentAmmo -= 1;
@@ -50,9 +130,10 @@ void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier)
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle_AttackDelay, Delegate, FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->FireRate, false);
 }
 
+
+
 void UGunHandler::Reload(FSoldierPropertyStruct& FiringSoldier)
 {
-	UE_LOG(LogTemp,Warning,TEXT("COVER ME I'M RELOADING"))
 	FiringSoldier.bBusy = true;
 	//reload visuals here
 	FTimerHandle TimerHandle_Reload;
@@ -63,7 +144,12 @@ void UGunHandler::Reload(FSoldierPropertyStruct& FiringSoldier)
 }
 
 
-
+void UGunHandler::SetAmmo(FSoldierPropertyStruct& FiringSoldier, int32 Ammo)
+{
+	FiringSoldier.bBusy = false;
+	FiringSoldier.SoldierWeapon.CurrentAmmo = Ammo;
+	Cast<ARTS_Unit_Base>(GetOwner())->SetSoldierData(FiringSoldier.Index, FiringSoldier);
+}
 // Called every frame
 void UGunHandler::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
@@ -72,12 +158,7 @@ void UGunHandler::TickComponent(float DeltaTime, ELevelTick TickType, FActorComp
 	// ...
 }
 
-void UGunHandler::SetAmmo(FSoldierPropertyStruct& FiringSoldier, int32 Ammo)
-{
-	FiringSoldier.bBusy = false;
-	FiringSoldier.SoldierWeapon.CurrentAmmo = Ammo;
-	Cast<ARTS_Unit_Base>(GetOwner())->SetSoldierData(FiringSoldier.Index, FiringSoldier);
-}
+
 
 TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 {
@@ -88,7 +169,7 @@ TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 	Owner->ISMWeaponSoldier->SetStaticMesh(Owner->SoldierWeapon->GetDefaultObject<UWeaponData>()->WeaponAsset);
 	Owner->ISMWeaponOfficer->SetStaticMesh(Owner->OfficerWeapon->GetDefaultObject<UWeaponData>()->WeaponAsset);
 
-
+	//i just kinda loop to set up stuff, I store most of the relevant information, so I don't have to redo the checking
 	if (Owner->SoldierWeapon != Owner->OfficerWeapon)
 	{
 		for (auto& i : UnitProperties)
@@ -100,13 +181,15 @@ TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 				FTransform ParentTransform;
 				Owner->GetIsm()->GetInstanceTransform(i.Index, ParentTransform);
 				i.SoldierWeapon.Index = Owner->ISMWeaponSoldier->AddInstance(ParentTransform);
-
+				i.SoldierWeapon.WeaponISM = Owner->ISMWeaponSoldier;
 			}
 			else
 			{
 				FTransform ParentTransform;
 				Owner->GetIsm()->GetInstanceTransform(i.Index, ParentTransform);
 				i.SoldierWeapon.Index = Owner->ISMWeaponOfficer->AddInstance(ParentTransform);
+				i.SoldierWeapon.WeaponISM = Owner->ISMWeaponOfficer;
+				FSoldierPropertyStruct Test = i;
 			}
 
 
@@ -122,9 +205,9 @@ TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 				FTransform ParentTransform;
 				Owner->GetIsm()->GetInstanceTransform(i.Index, ParentTransform);
 				i.SoldierWeapon.Index = Owner->ISMWeaponSoldier->AddInstance(ParentTransform);
-
+				i.SoldierWeapon.WeaponISM = Owner->ISMWeaponSoldier;
 	
-
+			
 		}
 
 	}

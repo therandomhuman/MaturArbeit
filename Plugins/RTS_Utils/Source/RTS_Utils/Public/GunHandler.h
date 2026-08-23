@@ -5,12 +5,17 @@
 #include "CoreMinimal.h"
 #include "Components/ActorComponent.h"
 
+#include "GameplayTagContainer.h"
+
 class ARTS_Unit_Base;
+
 
 struct FSoldierPropertyStruct;
 #include "GunHandler.generated.h"
 
 
+
+struct FGameplayTag;
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class RTS_UTILS_API UGunHandler : public UActorComponent
 {
@@ -26,6 +31,26 @@ public:
 protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
+
+
+
+	UPROPERTY(EditDefaultsOnly)
+	FGameplayTag CompareTag;
+
+
+
+	//variables to cache data regarding the current target, this gets overwritten once a target changes 
+
+	UPROPERTY(VisibleAnywhere, Category = Target, meta = (AllowPrivateAccess = "true"))
+	bool bIsUnit = false;
+
+
+	UPROPERTY(VisibleAnywhere, Category = Target, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<ARTS_Unit_Base> TargetUnit = nullptr;
+
+
+	UPROPERTY(VisibleAnywhere, Category = Target, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UInstancedStaticMeshComponent> TargetedISM = nullptr;
 
 private:
 
@@ -43,16 +68,23 @@ public:
 	UFUNCTION()
 	void SetAmmo(FSoldierPropertyStruct& FiringSoldier, int32 Ammo);
 
-
+	UFUNCTION()
 	TArray<FSoldierPropertyStruct> SetUpGuns();
-
+	UFUNCTION()
 	void UpdateGuns();
-
+	UFUNCTION()
 	void SetUpComponent();
 
+	UFUNCTION()
+	void FireGun(FSoldierPropertyStruct &FiringSoldier, AActor* Target);
 
-	void FireGun(FSoldierPropertyStruct &FiringSoldier );
 
+	UFUNCTION()
+	void SetUpTarget(AActor* Target);
+
+
+
+	UFUNCTION()
 	void Reload(FSoldierPropertyStruct& FiringSoldier);
 
 

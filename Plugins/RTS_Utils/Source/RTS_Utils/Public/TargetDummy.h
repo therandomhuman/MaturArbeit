@@ -7,10 +7,13 @@
 #include "GameplayTagAssetInterface.h"
 #include "Components/StaticMeshComponent.h"
 
+
+#include "Utilities/HealthInterface.h"
+
 #include "TargetDummy.generated.h"
 
 UCLASS()
-class RTS_UTILS_API ATargetDummy : public AActor, public IGameplayTagAssetInterface
+class RTS_UTILS_API ATargetDummy : public AActor, public IGameplayTagAssetInterface, public IHealthInterface
 {
 	GENERATED_BODY()
 	
@@ -21,6 +24,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
 
 public:	
 	// Called every frame
@@ -35,4 +39,9 @@ public:
 
 	virtual void GetOwnedGameplayTags(FGameplayTagContainer& TagContainer) const override;
 
+
+	virtual void TakeDamage(AActor* Cause, int32 Damage)override;
+
+
+	virtual void TakeDamage(AActor* Cause,int32 index, int32 Damage)override;
 };
