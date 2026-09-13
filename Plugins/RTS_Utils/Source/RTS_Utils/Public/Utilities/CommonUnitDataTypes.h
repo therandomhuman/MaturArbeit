@@ -37,6 +37,7 @@ struct FPathfindingModification
 
 
 
+
 //struct for storing per unit gun data, needs this because the actual data assets are singlton like
 USTRUCT()
 struct FGunData {

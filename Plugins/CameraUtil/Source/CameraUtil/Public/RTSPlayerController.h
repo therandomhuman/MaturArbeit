@@ -13,7 +13,7 @@
 /**
  * 
  */
-
+class AHUDBase;
 struct FInputActionValue;
 class ARTS_Unit_Base;
 class UInputAction;
@@ -45,6 +45,12 @@ private:
 
 	UPROPERTY()
 	FGameplayTagContainer SelectedActorTags;
+
+	UPROPERTY()
+	TObjectPtr<AHUDBase> ActiveHUD = nullptr;
+
+
+	virtual void BeginPlay() override;
 protected: //only the class itself and children can access protected things
 
 	virtual void SetupInputComponent() override; //virtual void overwrites inherited functions from parent classes

@@ -7,6 +7,8 @@
 #include "WeaponSystem/BaseProjectile.h"
 #include  "Components//InstancedStaticMeshComponent.h"
 
+#include "Kismet/GameplayStatics.h"
+
 #include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
@@ -70,6 +72,21 @@ void UGunHandler::SetUpTarget(AActor* Target)
 	}
 }
 
+float UGunHandler::CompensateHeight(double Distance, float GravityZ, float Speed)
+{
+
+
+	float Gravity =
+		FMath::Abs(GetWorld()->GetGravityZ()) *
+		GravityZ;
+	float FlightTime = Distance / Speed;
+
+	float Drop = 0.5f * Gravity * FMath::Square(FlightTime);
+
+	return Drop;
+
+}
+
 void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
 {
 
@@ -89,7 +106,7 @@ void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
 				TargetPos = Target->GetActorLocation();
 			}
 
-
+	UWeaponData* DefObject = FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>();
 	//spawning the projectile
 	FActorSpawnParameters SpawnParams;
 	ARTS_Unit_Base* Owner = Cast<ARTS_Unit_Base>(GetOwner());
@@ -100,9 +117,13 @@ void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
 	Owner->GetIsm()->GetInstanceTransform(FiringSoldier.Index, UnitTransform, true);
 	FVector UnitPos = UnitTransform.GetLocation() + FVector(0, 0, 25);
 
-
 	//calculate right fly direction
 	FVector DirectionVector =   TargetPos + FVector(0,0,5) - UnitPos;
+
+
+	TargetPos.Z += CompensateHeight(DirectionVector.Size(), DefObject->Gravity, DefObject->MuzzleVelocity);
+	DirectionVector = TargetPos + FVector(0, 0, 5) - UnitPos;
+
 	FRotator FlyDirection = UKismetMathLibrary::MakeRotFromXY(DirectionVector, DirectionVector);
 	AActor* NewProjAc = GetWorld()->SpawnActor<ABaseProjectile>(FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->ProjectileVisual, UnitPos, FlyDirection, SpawnParams);
 
@@ -115,12 +136,14 @@ void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
 	{
 		return;
 	}
-	UWeaponData* DefObject = FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>();
+
 	NewProjectile->SetUpNewProjectile(DefObject->MuzzleVelocity, DefObject->Gravity, DefObject->Damage);
 
 	//fire visuals here
 	FiringSoldier.SoldierWeapon.bCanFire = false;
 	FiringSoldier.SoldierWeapon.CurrentAmmo -= 1;
+
+	UGameplayStatics::PlaySoundAtLocation(this, DefObject->FireSFX, UnitPos + DefObject->MuzzleOffset, 1.0f, 1.0f, 0.0f);
 
 	//set up timer so that the reset function gets called asynchronously from the main thread
 	FTimerHandle TimerHandle_AttackDelay;
@@ -150,6 +173,7 @@ void UGunHandler::SetAmmo(FSoldierPropertyStruct& FiringSoldier, int32 Ammo)
 	FiringSoldier.SoldierWeapon.CurrentAmmo = Ammo;
 	Cast<ARTS_Unit_Base>(GetOwner())->SetSoldierData(FiringSoldier.Index, FiringSoldier);
 }
+
 // Called every frame
 void UGunHandler::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {

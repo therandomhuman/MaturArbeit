@@ -52,6 +52,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, Category = Target, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInstancedStaticMeshComponent> TargetedISM = nullptr;
 
+
+
+	float CompensateHeight(double Distance,float GravityZ, float Speed);
+
 private:
 
 

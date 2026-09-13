@@ -209,10 +209,8 @@ void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 void ARTS_Unit_Base::AttackObject_Implementation(AActor* NewTargetActor)
 {
 
-	AIController->StopMovement();
-	bMoving = false;
-	TargetActor = NewTargetActor;
-	GunHandler->SetUpTarget(NewTargetActor);
+	//AIController->StopMovement();
+	SetTarget(NewTargetActor);
 }
 
 
@@ -226,7 +224,9 @@ void ARTS_Unit_Base::TakeDamage(AActor* Causer, int32 Index, int32 Damage)
 {
 	UE_LOG(LogTemp, Warning, TEXT("Dammage Received%i"), Index)
 	FSoldierPropertyStruct& HitSoldier = SoldierProperties[Index];
+
 	HitSoldier.UnitHealth -= Damage;
+	UnitHealthDelegate.Broadcast(Index, HitSoldier.UnitHealth);
 	if (HitSoldier.UnitHealth <= 0)
 	{
 		RemoveDeadSoldier(HitSoldier);
@@ -303,6 +303,20 @@ const FSoldierPropertyStruct* ARTS_Unit_Base::GetSoldierData(int32 Index)
 	}
 	return nullptr;
 }
+
+
+
+const AActor* ARTS_Unit_Base::GetTarget()
+{
+	return TargetActor;
+}
+void ARTS_Unit_Base::SetTarget(AActor* NewTarget)
+{
+	TargetActor = NewTarget;
+	bMoving = false;
+	GunHandler->SetUpTarget(NewTarget);
+}
+
 
 void ARTS_Unit_Base::SetSoldierData(int32 Index, FSoldierPropertyStruct NewStruc)
 {

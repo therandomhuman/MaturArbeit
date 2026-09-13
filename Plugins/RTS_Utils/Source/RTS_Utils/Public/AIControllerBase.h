@@ -4,12 +4,20 @@
 
 #include "CoreMinimal.h"
 #include "AIController.h"
-
+#include "GameplayTagAssetInterface.h"
 
 class UAIPerceptionComponent;
+struct FAIStimulus;
+class APawn;
+class ARTS_Unit_Base;
+
+
+
+
+
 
 #include "AIControllerBase.generated.h"
-
+struct FGameplayTagContainer;
 /**
  * 
  */
@@ -19,7 +27,7 @@ class RTS_UTILS_API AAIControllerBase : public AAIController
 	GENERATED_BODY()
 	
 	
-
+	
 
 
 private:
@@ -31,4 +39,15 @@ private:
 
 	UPROPERTY(EditDefaultsOnly,meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIPerceptionComponent> AiPerceptionComp = nullptr;
+
+	UFUNCTION()
+	void PerceptionTargetUpdate(AActor* Actor, FAIStimulus Stimulus);
+
+	TObjectPtr<APawn> PossesedPawn = nullptr;
+
+	TObjectPtr<ARTS_Unit_Base> PossedUnit = nullptr;
+
+	UPROPERTY()
+	FGameplayTagContainer OwnerTags;
+
 };

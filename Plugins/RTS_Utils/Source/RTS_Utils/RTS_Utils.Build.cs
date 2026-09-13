@@ -41,7 +41,11 @@ public class RTS_Utils : ModuleRules
 				"SlateCore",
 				"AIModule",
                 "NavigationSystem",
-                "Niagara"
+                "Niagara",
+				"Slate",
+				"UMG",
+				"SlateCore",
+		
          
 		
 				// ... add private dependencies that you statically link with here ...	

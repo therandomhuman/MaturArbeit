@@ -6,6 +6,8 @@
 #include "EnhancedInputSubsystems.h"
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
+#include "UI/HUDBase.h"
+
 #include "RTS_Unit_Base.h"
 
 
@@ -15,6 +17,16 @@ ARTSPlayerController::ARTSPlayerController()
 
 	bShowMouseCursor = true;
 
+}
+void ARTSPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	AHUD* HUD = GetHUD();
+	if (HUD)
+	{ 
+		ActiveHUD = Cast<AHUDBase>(HUD);
+	}
 }
 void ARTSPlayerController::SetupInputComponent()
 {
@@ -56,6 +68,7 @@ void ARTSPlayerController::SelectHandler(const FInputActionValue& value)
 		if (SelectedActor->GetClass()->ImplementsInterface(USelectableInterface::StaticClass()))
 		{
 			ISelectableInterface::Execute_SelectActor(SelectedActor, false);
+			ActiveHUD->AssignUnit(nullptr);
 		}
 	}
 	SelectedActor = HitResult.GetActor();
@@ -74,7 +87,7 @@ void ARTSPlayerController::SelectHandler(const FInputActionValue& value)
 				return;
 			}
 			SelectedActorTagInter->GetOwnedGameplayTags(SelectedActorTags);
-
+			ActiveHUD->AssignUnit(SelectedActor);
 		}
 
 	}

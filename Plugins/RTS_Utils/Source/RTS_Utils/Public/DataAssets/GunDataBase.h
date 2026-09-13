@@ -53,4 +53,10 @@ public:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Projectile")
 	float MuzzleVelocity;
 
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Settings|Projectile")
+	FVector MuzzleOffset;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Effects")
+	TObjectPtr<USoundBase> FireSFX;
+
 };

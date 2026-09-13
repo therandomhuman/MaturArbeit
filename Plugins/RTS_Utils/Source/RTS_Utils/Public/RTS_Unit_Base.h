@@ -24,7 +24,11 @@ class UPathFollowingComponent;
 class AAIController;
 class UGunHandler;
 class UWeaponData;
+class UUnitDataBase;
 
+//delcare delegates
+
+DECLARE_MULTICAST_DELEGATE_TwoParams(FUnitHealthDelegate, int32 /* index */, int32 /* health */);
 
 //macro call like Uproperty which sets the metadata and such up for engine use
 
@@ -132,6 +136,10 @@ private:
 
 public:	
 
+	//delegates
+
+	FUnitHealthDelegate UnitHealthDelegate;
+
 	//Delcare ISM for weapons
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInstancedStaticMeshComponent> ISMWeaponSoldier = nullptr;
@@ -151,7 +159,8 @@ public:
 	TObjectPtr<UCapsuleComponent> CapsuleComp = nullptr;
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
-	EUnitType UnitType;
+	TSubclassOf<UUnitDataBase> UnitType = nullptr;
+
 
 
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
@@ -179,6 +188,11 @@ public:
 	const TArray<FSoldierPropertyStruct> GetUnitdata();
 
 
+	const AActor* GetTarget();
+
+	void SetTarget(AActor* NewTarget);
+
+
 	//Getter Function for getting a specific soldier's data, this requires the caller to know the index
 	const FSoldierPropertyStruct* GetSoldierData(int32 Index);
 	//Setter Function for setting a specific soldier's data, this requires the caller to know the index
@@ -195,6 +209,7 @@ public:
 
 	//interfaces for damage system
 	virtual void TakeDamage(AActor* Causer, int32 Index, int32 Damage) override;
+
 
 
 };
