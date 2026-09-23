@@ -28,5 +28,5 @@ public:
 
 	static TArray<FTransform> CalculateMovementTransform(TObjectPtr<ARTS_Unit_Base> Unit, float DeltaTime);
 
-
+	static FTransform ChangeUnitRotation(ARTS_Unit_Base* Unit,FRotator NewRotation, int32 Index);
 };

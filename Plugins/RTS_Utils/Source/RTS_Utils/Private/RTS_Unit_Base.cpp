@@ -135,6 +135,7 @@ void ARTS_Unit_Base::RunAttackCheck()
 	}
 }
 
+
 // Called every frame
 void ARTS_Unit_Base::Tick(float DeltaTime)
 {
@@ -176,6 +177,11 @@ void ARTS_Unit_Base::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 
 }
 
+
+void ARTS_Unit_Base::SetSoldierTransform(FTransform NewTransform, int32 Index)
+{
+	IsmComp->UpdateInstanceTransform(Index, NewTransform, false, true);
+}
 
 void ARTS_Unit_Base::SelectActor_Implementation(const bool Select)
 {
@@ -253,6 +259,16 @@ void ARTS_Unit_Base::RemoveDeadSoldier(FSoldierPropertyStruct& DeadSoldier)
 	DeadSoldier.SoldierWeapon.WeaponISM->RemoveInstance(DeadSoldier.SoldierWeapon.Index);
 	SoldierProperties.RemoveAt(DeadSoldier.Index);
 	IsmComp->RemoveInstance(DeadSoldier.Index);
+	if (SoldierProperties.Num() <= 0)
+	{
+		HandleUnitDeath();
+	}
+}
+
+void ARTS_Unit_Base::HandleUnitDeath()
+{
+	UnitDeathDelegate.Broadcast(this);
+	SetLifeSpan(5.0f);
 }
 
 //move functionality
@@ -304,7 +320,7 @@ const FSoldierPropertyStruct* ARTS_Unit_Base::GetSoldierData(int32 Index)
 	return nullptr;
 }
 
-
+//target functionality
 
 const AActor* ARTS_Unit_Base::GetTarget()
 {
@@ -315,11 +331,26 @@ void ARTS_Unit_Base::SetTarget(AActor* NewTarget)
 	TargetActor = NewTarget;
 	bMoving = false;
 	GunHandler->SetUpTarget(NewTarget);
+	ARTS_Unit_Base* CastedTarget = Cast<ARTS_Unit_Base>(NewTarget);
+	if (CastedTarget)
+	{
+		CastedTarget->UnitDeathDelegate.AddUObject(this, &ThisClass::RemoveTarget);
+	}
+}
+void ARTS_Unit_Base::RemoveTarget(AActor*)
+{
+	TargetActor = nullptr;
+
 }
 
 
 void ARTS_Unit_Base::SetSoldierData(int32 Index, FSoldierPropertyStruct NewStruc)
 {
+	if (Index >= SoldierProperties.Num())
+	{
+		return;
+	}
+
 	SoldierProperties[Index] = NewStruc;
 }
 

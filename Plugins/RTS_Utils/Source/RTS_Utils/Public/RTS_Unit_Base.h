@@ -29,6 +29,7 @@ class UUnitDataBase;
 //delcare delegates
 
 DECLARE_MULTICAST_DELEGATE_TwoParams(FUnitHealthDelegate, int32 /* index */, int32 /* health */);
+DECLARE_MULTICAST_DELEGATE_OneParam(FDeathDelegate, AActor* /* dead unit */);
 
 //macro call like Uproperty which sets the metadata and such up for engine use
 
@@ -132,6 +133,7 @@ private:
 	//Function to bind to delegate to clean up after movement is done
 	void RunAttackCheck();
 
+	void HandleUnitDeath();
 
 
 public:	
@@ -139,6 +141,8 @@ public:
 	//delegates
 
 	FUnitHealthDelegate UnitHealthDelegate;
+
+	FDeathDelegate UnitDeathDelegate;
 
 	//Delcare ISM for weapons
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Pawn, meta = (AllowPrivateAccess = "true"))
@@ -193,10 +197,18 @@ public:
 	void SetTarget(AActor* NewTarget);
 
 
+	void RemoveTarget(AActor*);
+
+
 	//Getter Function for getting a specific soldier's data, this requires the caller to know the index
 	const FSoldierPropertyStruct* GetSoldierData(int32 Index);
 	//Setter Function for setting a specific soldier's data, this requires the caller to know the index
 	void  SetSoldierData(int32 Index, FSoldierPropertyStruct);
+
+
+
+
+	void SetSoldierTransform(FTransform NewTransform, int32 Index);
 	
 	//Declare Interface Implementation
 	void SelectActor_Implementation(const bool Select)override;

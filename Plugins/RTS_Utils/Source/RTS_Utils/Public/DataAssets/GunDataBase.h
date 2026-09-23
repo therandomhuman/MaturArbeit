@@ -9,6 +9,7 @@
 
 #include "GunDataBase.generated.h"
 
+class UNiagaraSystem;
 
 /**
  * 
@@ -58,5 +59,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Settings|Effects")
 	TObjectPtr<USoundBase> FireSFX;
+
+
+	UPROPERTY(EditDefaultsOnly, Category = "Settings|Effects")
+	TObjectPtr<UNiagaraSystem> FireVFX;
 
 };

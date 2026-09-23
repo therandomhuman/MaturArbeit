@@ -3,12 +3,13 @@
 
 #include "GunHandler.h"
 #include "RTS_Unit_Base.h"
+#include "Utilities/MovementUtilities.h"
 #include "Utilities/CommonUnitDataTypes.h"
 #include "WeaponSystem/BaseProjectile.h"
 #include  "Components//InstancedStaticMeshComponent.h"
 
 #include "Kismet/GameplayStatics.h"
-
+#include "NiagaraFunctionLibrary.h"
 #include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
@@ -125,6 +126,8 @@ void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
 	DirectionVector = TargetPos + FVector(0, 0, 5) - UnitPos;
 
 	FRotator FlyDirection = UKismetMathLibrary::MakeRotFromXY(DirectionVector, DirectionVector);
+	FTransform NewTransform = MovementUtilities::ChangeUnitRotation(Owner, FlyDirection, FiringSoldier.Index);
+	Owner->SetSoldierTransform(NewTransform,FiringSoldier.Index);
 	AActor* NewProjAc = GetWorld()->SpawnActor<ABaseProjectile>(FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->ProjectileVisual, UnitPos, FlyDirection, SpawnParams);
 
 	if (NewProjAc == nullptr)
@@ -143,14 +146,15 @@ void UGunHandler::FireGun(FSoldierPropertyStruct& FiringSoldier,AActor* Target)
 	FiringSoldier.SoldierWeapon.bCanFire = false;
 	FiringSoldier.SoldierWeapon.CurrentAmmo -= 1;
 
-	UGameplayStatics::PlaySoundAtLocation(this, DefObject->FireSFX, UnitPos + DefObject->MuzzleOffset, 1.0f, 1.0f, 0.0f);
+	UGameplayStatics::PlaySoundAtLocation(this, DefObject->FireSFX, UnitPos + DefObject->MuzzleOffset + DefObject->DefaultOffset, 1.0f, 1.0f, 0.0f);
+	UNiagaraFunctionLibrary::SpawnSystemAtLocation(this,DefObject->FireVFX, UnitPos + DefObject->MuzzleOffset + DefObject->DefaultOffset, FlyDirection,FVector::OneVector,true);
 
 	//set up timer so that the reset function gets called asynchronously from the main thread
 	FTimerHandle TimerHandle_AttackDelay;
 	FTimerDelegate Delegate;
 	Delegate.BindUFunction(this, FName("SetCanFire"), FiringSoldier);
 
-	GetWorld()->GetTimerManager().SetTimer(TimerHandle_AttackDelay, Delegate, FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->FireRate, false);
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_AttackDelay, Delegate, FiringSoldier.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->FireRate + UKismetMathLibrary::RandomFloatInRange(0.f,1.5f), false);
 }
 
 
@@ -171,6 +175,10 @@ void UGunHandler::SetAmmo(FSoldierPropertyStruct& FiringSoldier, int32 Ammo)
 {
 	FiringSoldier.bBusy = false;
 	FiringSoldier.SoldierWeapon.CurrentAmmo = Ammo;
+	if (FiringSoldier.UnitHealth <= 0)
+	{
+		return;
+	}
 	Cast<ARTS_Unit_Base>(GetOwner())->SetSoldierData(FiringSoldier.Index, FiringSoldier);
 }
 
@@ -204,6 +212,7 @@ TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 			{
 				FTransform ParentTransform;
 				Owner->GetIsm()->GetInstanceTransform(i.Index, ParentTransform);
+				ParentTransform *= FTransform(i.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->DefaultOffset);
 				i.SoldierWeapon.Index = Owner->ISMWeaponSoldier->AddInstance(ParentTransform);
 				i.SoldierWeapon.WeaponISM = Owner->ISMWeaponSoldier;
 			}
@@ -211,6 +220,7 @@ TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 			{
 				FTransform ParentTransform;
 				Owner->GetIsm()->GetInstanceTransform(i.Index, ParentTransform);
+				ParentTransform *= FTransform(i.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->DefaultOffset);
 				i.SoldierWeapon.Index = Owner->ISMWeaponOfficer->AddInstance(ParentTransform);
 				i.SoldierWeapon.WeaponISM = Owner->ISMWeaponOfficer;
 				FSoldierPropertyStruct Test = i;
@@ -228,6 +238,7 @@ TArray<FSoldierPropertyStruct> UGunHandler::SetUpGuns()
 		
 				FTransform ParentTransform;
 				Owner->GetIsm()->GetInstanceTransform(i.Index, ParentTransform);
+				ParentTransform *= FTransform(i.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->DefaultOffset);
 				i.SoldierWeapon.Index = Owner->ISMWeaponSoldier->AddInstance(ParentTransform);
 				i.SoldierWeapon.WeaponISM = Owner->ISMWeaponSoldier;
 	

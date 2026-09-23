@@ -25,7 +25,7 @@ void AAIControllerBase::BeginPlay()
 
 void AAIControllerBase::PerceptionTargetUpdate(AActor* Actor, FAIStimulus Stimulus)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Name %s") ,*Actor->GetName())
+
 	IGameplayTagAssetInterface* SelectedActorTagInter = Cast<IGameplayTagAssetInterface>(Actor);
 	if (!SelectedActorTagInter)
 	{
@@ -36,13 +36,16 @@ void AAIControllerBase::PerceptionTargetUpdate(AActor* Actor, FAIStimulus Stimul
 
 	if (TargetTags.GetByIndex(0).RequestDirectParent() != OwnerTags.GetByIndex(0).RequestDirectParent())
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Perceived evil enemy, grrrrrrr"));
 		if (PossedUnit != nullptr)
 		{
 			if (!PossedUnit->GetTarget())
 			{
 				PossedUnit->SetTarget(Actor);
+			}else if (PossedUnit->GetTarget() and Stimulus.SensingSucceeded == false)
+			{
+				PossedUnit->RemoveTarget(Actor);
 			}
+			
 		}
 		
 	}
