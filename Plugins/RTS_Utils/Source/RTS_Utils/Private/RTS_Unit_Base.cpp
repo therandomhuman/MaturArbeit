@@ -239,6 +239,12 @@ void ARTS_Unit_Base::TakeDamage(AActor* Causer, int32 Index, int32 Damage)
 	}
 }
 
+FGameplayTag ARTS_Unit_Base::GetCaptorTeam()
+{
+	
+	return GameplayTags.GetByIndex(0).RequestDirectParent();
+}
+
 
 void ARTS_Unit_Base::RemoveDeadSoldier(FSoldierPropertyStruct& DeadSoldier)
 {

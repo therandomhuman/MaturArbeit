@@ -11,6 +11,7 @@
 #include "GameplayTagAssetInterface.h"
 
 #include "Utilities/HealthInterface.h"
+#include "Utilities/CaptureInterface.h"
 
 //includde generated engine stuff
 #include "RTS_Unit_Base.generated.h"
@@ -42,7 +43,7 @@ struct FAIRequestID;
 
 enum class EUnitType;
 UCLASS()
-class RTS_UTILS_API ARTS_Unit_Base : public APawn, public ISelectableInterface, public IRTS_CommandInterface, public IGameplayTagAssetInterface, public IHealthInterface
+class RTS_UTILS_API ARTS_Unit_Base : public APawn, public ISelectableInterface, public IRTS_CommandInterface, public IGameplayTagAssetInterface, public IHealthInterface, public ICaptureInterface
 {
 	GENERATED_BODY()
 
@@ -222,6 +223,6 @@ public:
 	//interfaces for damage system
 	virtual void TakeDamage(AActor* Causer, int32 Index, int32 Damage) override;
 
-
+	virtual FGameplayTag GetCaptorTeam()override;
 
 };
