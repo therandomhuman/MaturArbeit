@@ -19,6 +19,11 @@ void AHUDBase::AssignUnit(AActor* NewSelected)
 	UpdateWidgets();
 }
 
+void AHUDBase::ToggleGameStateScreen()
+{
+	LoseScreenWidget->SetVisibility(ESlateVisibility::Visible);
+}
+
 void AHUDBase::BeginPlay()
 {
 	Super::BeginPlay();
@@ -33,6 +38,9 @@ void AHUDBase::BeginPlay()
 	MainWidget->AddToViewport();
 	MainWidget->SetVisibility(ESlateVisibility::Collapsed);
 
+	LoseScreenWidget = CreateWidget<UUserWidget>(World, LoseScreenUIWidgetClass);
+	LoseScreenWidget->AddToViewport();
+	LoseScreenWidget->SetVisibility(ESlateVisibility::Collapsed);
 
 
 

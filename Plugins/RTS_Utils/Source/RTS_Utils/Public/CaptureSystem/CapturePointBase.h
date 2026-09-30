@@ -8,7 +8,7 @@
 
 #include "CapturePointBase.generated.h"
 
-
+DECLARE_MULTICAST_DELEGATE_OneParam(FCaptureDelegate, const FGameplayTag& /* who captured */);
 
 class USphereComponent;
 struct 	FGameplayTag;
@@ -46,6 +46,9 @@ protected:
 	UPROPERTY(EditAnywhere, Category = CaptureSystem, meta = (AllowPrivateAccess = "true"))
 	FGameplayTag CurrentlyAtCapAdvantage;
 
+	UPROPERTY(EditAnywhere, Category = CaptureSystem, meta = (AllowPrivateAccess = "true"))
+	FGameplayTag LastOwner;
+
 	//the amount of "ticks" the units have to do before a point is caputred/uncaptured
 	UPROPERTY(EditAnywhere, Category = CaptureSystem, meta = (AllowPrivateAccess = "true"))
 	float MaxCapLevel = 100;
@@ -56,7 +59,7 @@ protected:
 
 
 	UPROPERTY(EditAnywhere, Category = CaptureSystem)
-	float CaptureInterval = 1.f;
+	float CaptureInterval = 0.2f;
 
 	UFUNCTION()
 	void BeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
@@ -70,11 +73,11 @@ protected:
 	FTimerHandle CaptureTimerHandle;
 
 	void UpdateCapture();
-	void RecalcPointOwnership(bool bEnemyCap);
+	void RecalcPointOwnership();
 	void ToggleTimer(bool state);
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
+	FCaptureDelegate CaptureDelegate;
 };

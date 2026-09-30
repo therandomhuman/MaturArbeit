@@ -19,12 +19,16 @@ UCLASS()
 class RTS_UTILS_API AHUDBase : public AHUD
 {
 public:
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditAnywhere, category = "UI Classes")
 	TSubclassOf<UUserWidget> MainUIWidgetClass = nullptr;
+
+	UPROPERTY(EditAnywhere,category = "UI Classes")
+	TSubclassOf<UUserWidget> LoseScreenUIWidgetClass = nullptr;
 
 
 	void AssignUnit(AActor* NewSelected);
 
+	void ToggleGameStateScreen();
 protected:
 	virtual void BeginPlay() override;
 
@@ -45,6 +49,9 @@ private:
 	UPROPERTY()
 	TObjectPtr<UGeneralWidget>  MainWidget = nullptr;
 
+
+	UPROPERTY()
+	TObjectPtr<UUserWidget>  LoseScreenWidget = nullptr;
 
 
 	UPROPERTY(VisibleAnywhere)

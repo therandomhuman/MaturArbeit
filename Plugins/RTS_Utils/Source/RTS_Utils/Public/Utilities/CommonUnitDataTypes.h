@@ -98,7 +98,18 @@ struct FSoldierPropertyStruct
 
 };
 
+USTRUCT()
+struct FAiUnitGroup
+{
+	//maybe store their contrller not their pawn since yknow
+	GENERATED_BODY()
+	UPROPERTY(EditAnywhere, Category = General, meta = (AllowPrivateAccess = "true"))
+	TArray<TObjectPtr<ARTS_Unit_Base>> Units;
+	UPROPERTY(EditAnywhere, Category = General, meta = (AllowPrivateAccess = "true"))
+	FGameplayTag CurrentActivity;
 
+
+};
 
 /**
  * 
