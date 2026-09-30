@@ -4,8 +4,9 @@
 #include "DefenseMode/AICommanderBase.h"
 #include "RTS_Unit_Base.h"
 #include "DefenseMode/DefenseGameModeBase.h"
+#include "DefenseMode/WaveSpawner.h"
 #include "Kismet/GameplayStatics.h"
-#include "Utilities/WaveSystem.h"
+
 
 // Sets default values
 AAICommanderBase::AAICommanderBase()
@@ -28,14 +29,29 @@ void AAICommanderBase::BeginPlay()
 		true
 	);
 
+	GameMode = Cast<ADefenseGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()));
+
+	
 }
 
 void AAICommanderBase::ProccessNextObjective()
 {
-	FObjective CurrentObject = Cast<ADefenseGameModeBase>(UGameplayStatics::GetGameMode(GetWorld()))->GetCurrentObjective();
+	FObjective CurrentObject = GameMode->GetCurrentObjective();
 	
 	IssueMoveOrder(CurrentlyActiveUnitGroups[0], CurrentObject.RelevantObject->GetActorLocation());
 }
+
+void AAICommanderBase::AddUnitGroups(TArray<FAiUnitGroup> NewUnitGroups)
+{
+	CurrentlyActiveUnitGroups.Append(NewUnitGroups);
+}
+
+void AAICommanderBase::SetWaveSpawner(AWaveSpawner* Spawner)
+{
+	WaveSpawner = Spawner;
+	WaveSpawner->WaveDelegate.AddUObject(this, &AAICommanderBase::AddUnitGroups);
+}
+
 
 void AAICommanderBase::IssueMoveOrder(FAiUnitGroup UnitGroupToCommand,FVector Goal)
 {
@@ -49,11 +65,6 @@ void AAICommanderBase::IssueMoveOrder(FAiUnitGroup UnitGroupToCommand,FVector Go
 void AAICommanderBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-}
-
-void AAICommanderBase::SpawnWave()
-{
 
 }
 

@@ -9,6 +9,9 @@
 
 class ACapturePointBase;
 class AHUDBase;
+class AAICommanderBase;
+class AWaveSpawner;
+
 struct FGameplayTag;
 /**
  * 
@@ -34,7 +37,7 @@ class RTS_UTILS_API ADefenseGameModeBase : public AGameModeBase
 
 	virtual void BeginPlay() override;
 
-private:
+protected:
 
 	UPROPERTY(EditAnywhere,Category = "Points", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<ACapturePointBase> CapturePointAssigned = nullptr;
@@ -43,6 +46,12 @@ private:
 	FGameplayTag PlayerTeam;
 
 	TArray<AActor*> CapturePoints;
+
+	UPROPERTY(EditAnywhere, Category = "Team", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AAICommanderBase> AiCommander = nullptr;
+	UPROPERTY(EditAnywhere, Category = "Team", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AWaveSpawner> WaveSpawner = nullptr;
+
 	UFUNCTION()
 	void HandlePointCapture(const FGameplayTag& Capturer);
 
@@ -52,7 +61,10 @@ private:
 
 	FObjective CurrentObjective;
 	 
+
 public:
+
+	TObjectPtr<AWaveSpawner> GetWaveSpawner();
 
 	//getter function so that e.g the ai commander knows the current objective, I return a struct so I can pass more information and for future proofing(e.g new ojective types)
 	FObjective GetCurrentObjective();

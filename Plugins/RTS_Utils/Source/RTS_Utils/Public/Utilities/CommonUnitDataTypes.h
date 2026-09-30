@@ -4,13 +4,15 @@
 
 #include "CoreMinimal.h"
 
-
+#include "GameplayTagContainer.h"
 #include "DataAssets/GunDataBase.h"
 //includde generated engine stuff
 #include "CommonUnitDataTypes.generated.h"
 
 //This script includes all the common data types the unit uses, they're seperated from the unit script for easier readability and so that if a script only needs to know the data type it doesn't have to include the entire unit script.
 class UInstancedStaticMeshComponent;
+class ARTS_Unit_Base;
+
 
 UENUM()
 enum class EUnitType
