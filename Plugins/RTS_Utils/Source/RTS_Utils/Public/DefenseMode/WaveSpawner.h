@@ -4,10 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "Utilities/CommonUnitDataTypes.h"
+
+#include "DefenseMode/CommonGamemodeDataTypes.h"
+
 #include "WaveSpawner.generated.h"
 
 DECLARE_MULTICAST_DELEGATE_OneParam(FWaveDelegate, TArray<FAiUnitGroup> /* spawned in units */);
+
+
+class AAICommanderBase;
+class ADefenseGameModeBase;
 
 USTRUCT()
 struct FSpawnInformation
@@ -61,6 +67,10 @@ protected:
 
 	FTimerHandle WaveTimerHandle;
 
+	UPROPERTY(VisibleAnywhere, Category = Ai, meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<AAICommanderBase> ActiveCommander = nullptr;
+
+	TObjectPtr<ADefenseGameModeBase> DefenseGameMode = nullptr;
 
 public:	
 	// Called every frame
@@ -69,5 +79,7 @@ public:
 	FWaveDelegate WaveDelegate;
 	
 	void StartUpWaves();
+
+	void RegisterAiCommander(AAICommanderBase*);
 
 };

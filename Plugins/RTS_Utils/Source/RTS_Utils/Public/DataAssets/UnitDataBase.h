@@ -23,7 +23,8 @@ public:
 	UPROPERTY(EditDefaultsOnly)
 	FText UnitInformation = FText::FromString(TEXT("Placeholder"));
 	
-
+	UPROPERTY(EditDefaultsOnly)
+	int32 Range = 100;
 
 	UPROPERTY(EditDefaultsOnly)
 	TObjectPtr<UTexture2D> UnitImage = nullptr;

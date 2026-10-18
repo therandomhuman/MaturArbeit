@@ -7,6 +7,7 @@
 #include "RTS_Unit_Base.h"
 #include "DataAssets/UnitDataBase.h"
 
+#include "UI/GameStateScreenBase.h"
 #include "UI/GeneralWidget.h"
 
 void AHUDBase::AssignUnit(AActor* NewSelected)
@@ -19,8 +20,13 @@ void AHUDBase::AssignUnit(AActor* NewSelected)
 	UpdateWidgets();
 }
 
-void AHUDBase::ToggleGameStateScreen()
+void AHUDBase::ToggleGameStateScreen(bool bWon)
 {
+	if (bWon)
+	{
+		
+		LoseScreenWidget->SetStateText(FText::FromString("You Won!"));
+	}
 	LoseScreenWidget->SetVisibility(ESlateVisibility::Visible);
 }
 
@@ -38,7 +44,8 @@ void AHUDBase::BeginPlay()
 	MainWidget->AddToViewport();
 	MainWidget->SetVisibility(ESlateVisibility::Collapsed);
 
-	LoseScreenWidget = CreateWidget<UUserWidget>(World, LoseScreenUIWidgetClass);
+	LoseScreenWidget = CreateWidget<UGameStateScreenBase>(World, LoseScreenUIWidgetClass);
+	LoseScreenWidget->SetUpButtonDelegates();
 	LoseScreenWidget->AddToViewport();
 	LoseScreenWidget->SetVisibility(ESlateVisibility::Collapsed);
 
@@ -51,12 +58,11 @@ void AHUDBase::BeginPlay()
 void AHUDBase::EndPlay(const EEndPlayReason::Type EndPlayReasn)
 {
 	Super::EndPlay(EndPlayReasn);
-	//clean up delegates of the stuff here
 }
 
 
 
-void AHUDBase::UpdateWidgets()//this is specifically for general updates, meaning specific changes are handdled by delegates, it's cleaner that way
+void AHUDBase::UpdateWidgets()//this is specifically for general updates
 {
 	if (!SelectedUnit)//if I don't have anything selected there is no point updating
 	{

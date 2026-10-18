@@ -15,6 +15,7 @@
 
 class ARTS_Unit_Base;
 class UGeneralWidget;
+class UGameStateScreenBase;
 UCLASS()
 class RTS_UTILS_API AHUDBase : public AHUD
 {
@@ -28,7 +29,7 @@ public:
 
 	void AssignUnit(AActor* NewSelected);
 
-	void ToggleGameStateScreen();
+	void ToggleGameStateScreen(bool bWon);
 protected:
 	virtual void BeginPlay() override;
 
@@ -51,7 +52,7 @@ private:
 
 
 	UPROPERTY()
-	TObjectPtr<UUserWidget>  LoseScreenWidget = nullptr;
+	TObjectPtr<UGameStateScreenBase>  LoseScreenWidget = nullptr;
 
 
 	UPROPERTY(VisibleAnywhere)

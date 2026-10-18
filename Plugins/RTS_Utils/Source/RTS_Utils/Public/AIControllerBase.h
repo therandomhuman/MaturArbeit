@@ -13,7 +13,7 @@ class ARTS_Unit_Base;
 
 
 
-
+DECLARE_MULTICAST_DELEGATE_TwoParams(FSensedEnemyDelegate, TObjectPtr<AActor> /* sensed enemy */, bool bSensed/*if the enemy was sensed or lost*/);
 
 
 #include "AIControllerBase.generated.h"
@@ -36,6 +36,8 @@ private:
 
 	virtual void BeginPlay() override;
 
+	virtual void OnPossess(APawn* InPawn) override;
+
 
 	UPROPERTY(EditDefaultsOnly,meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UAIPerceptionComponent> AiPerceptionComp = nullptr;
@@ -47,7 +49,14 @@ private:
 
 	TObjectPtr<ARTS_Unit_Base> PossedUnit = nullptr;
 
+
+
+
 	UPROPERTY()
 	FGameplayTagContainer OwnerTags;
+
+
+public:
+	FSensedEnemyDelegate SensedEnemyDelegate;
 
 };

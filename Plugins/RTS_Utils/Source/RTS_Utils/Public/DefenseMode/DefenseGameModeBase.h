@@ -5,6 +5,9 @@
 #include "CoreMinimal.h"
 #include "GameFramework/GameModeBase.h"
 #include "CaptureSystem/CapturePointBase.h"
+
+#include "DefenseMode/CommonGamemodeDataTypes.h"
+
 #include "DefenseGameModeBase.generated.h"
 
 class ACapturePointBase;
@@ -16,20 +19,7 @@ struct FGameplayTag;
 /**
  * 
  */
-UENUM()
-enum EObjectiveType
-{
-	Capture
-};
 
-USTRUCT()
-struct FObjective
-{
-	GENERATED_BODY()
-	EObjectiveType ObjectiveType = EObjectiveType::Capture;
-
-	AActor* RelevantObject = nullptr;
-};
 UCLASS()
 class RTS_UTILS_API ADefenseGameModeBase : public AGameModeBase
 {
@@ -56,16 +46,26 @@ protected:
 	void HandlePointCapture(const FGameplayTag& Capturer);
 
 
+
+
 	UPROPERTY()
 	TObjectPtr<AHUDBase> ActiveHUD = nullptr;
 
 	FObjective CurrentObjective;
 	 
-
+private:
+	bool bHasStartedWave = false;
 public:
 
 	TObjectPtr<AWaveSpawner> GetWaveSpawner();
 
 	//getter function so that e.g the ai commander knows the current objective, I return a struct so I can pass more information and for future proofing(e.g new ojective types)
-	FObjective GetCurrentObjective();
+	FObjective& GetCurrentObjective();
+
+
+	void RegisterWaveSpawner(AWaveSpawner* WaveSpawnerToRegister);
+
+	void RegisterAiCommander(AAICommanderBase* AiCommanderToRegister);
+
+	void HandleWaveBeat();
 };

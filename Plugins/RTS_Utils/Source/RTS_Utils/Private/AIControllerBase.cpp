@@ -10,10 +10,15 @@
 void AAIControllerBase::BeginPlay()
 {
 	Super::BeginPlay();
-	AiPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this,&AAIControllerBase::PerceptionTargetUpdate);
 	
-	//get owned pawn and their tags
-	PossesedPawn = GetPawn();
+}
+
+void AAIControllerBase::OnPossess(APawn* InPawn)
+{
+	Super::OnPossess(InPawn);
+	AiPerceptionComp->OnTargetPerceptionUpdated.AddDynamic(this, &AAIControllerBase::PerceptionTargetUpdate);
+
+	PossesedPawn = InPawn;
 	PossedUnit = Cast<ARTS_Unit_Base>(PossesedPawn);
 	IGameplayTagAssetInterface* SelectedActorTagInter = Cast<IGameplayTagAssetInterface>(PossesedPawn);
 	if (!SelectedActorTagInter)
@@ -36,13 +41,19 @@ void AAIControllerBase::PerceptionTargetUpdate(AActor* Actor, FAIStimulus Stimul
 
 	if (TargetTags.GetByIndex(0).RequestDirectParent() != OwnerTags.GetByIndex(0).RequestDirectParent())
 	{
+
 		if (PossedUnit != nullptr)
 		{
-			if (!PossedUnit->GetTarget())
+			if (Stimulus.WasSuccessfullySensed() == true)
 			{
-				PossedUnit->SetTarget(Actor);
-			}else if (PossedUnit->GetTarget() and Stimulus.SensingSucceeded == false)
+				SensedEnemyDelegate.Broadcast(Actor, true);
+				if (!PossedUnit->GetTarget())
+				{
+					PossedUnit->SetTarget(Actor);
+				}
+			}else if (PossedUnit->GetTarget() and Stimulus.WasSuccessfullySensed() == false)
 			{
+				SensedEnemyDelegate.Broadcast(Actor, false);
 				PossedUnit->RemoveTarget(Actor);
 			}
 			

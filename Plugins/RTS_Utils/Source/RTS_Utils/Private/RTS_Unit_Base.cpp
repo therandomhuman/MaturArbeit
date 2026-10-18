@@ -8,6 +8,7 @@
 #include "GameFramework/FloatingPawnMovement.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "AIController.h"
+#include "DataAssets/UnitDataBase.h"
 
 #include "NavMesh/NavMeshPath.h"
 
@@ -65,7 +66,10 @@ ARTS_Unit_Base::ARTS_Unit_Base()
 	DefaultFormationOffsets.Emplace(FVector(0, -200, -CapsuleComp->GetScaledCapsuleHalfHeight()));
 
 
-
+	if (UnitType)
+	{
+		Range = UnitType->GetDefaultObject<UUnitDataBase>()->Range;
+	}
 
 	//assign the formation offsets to soldiers
 
@@ -90,6 +94,23 @@ void ARTS_Unit_Base::BeginPlay()
 	AIController = Cast<AAIController>(GetController());
 	PathFollowingComp = AIController->GetPathFollowingComponent();
 	PathFollowingComp->OnRequestFinished.AddUObject(this, &ARTS_Unit_Base::HandleMovementCleanUp);
+
+	if (UnitType)
+	{
+		Range = UnitType->GetDefaultObject<UUnitDataBase>()->Range;
+	}
+
+	NavSys = FNavigationSystem::GetCurrent<UNavigationSystemV1>(GetWorld());
+
+	TArray<FTransform> Transforms = MovementUtilities::DistributeUnitsAtArea(NavSys, GetActorLocation(), SoldierProperties);
+
+	IsmComp->ClearInstances();
+	IsmComp->AddInstances(Transforms, true);
+	for (auto& i : SoldierProperties)
+	{
+		i.SoldierWeapon.CurrentAmmo = i.SoldierWeapon.GunDataAsset->GetDefaultObject<UWeaponData>()->MaxAmmo;
+	}
+	SoldierProperties = GunHandler->SetUpGuns();
 }
 
 
@@ -145,7 +166,15 @@ void ARTS_Unit_Base::Tick(float DeltaTime)
 		Move(DeltaTime);
 	}else if (TargetActor != nullptr)
 	{
-		RunAttackCheck();
+		if (bChasingEnemy)
+		{
+			Move(DeltaTime);
+		}
+		else
+		{
+			RunAttackCheck();
+		}
+		
 	}
 	
 }
@@ -215,7 +244,7 @@ void ARTS_Unit_Base::MoveToLocation_Implementation(const FVector TargetLocation)
 void ARTS_Unit_Base::AttackObject_Implementation(AActor* NewTargetActor)
 {
 
-	//AIController->StopMovement();
+	AIController->StopMovement();
 	SetTarget(NewTargetActor);
 }
 
@@ -281,11 +310,7 @@ void ARTS_Unit_Base::HandleUnitDeath()
 void ARTS_Unit_Base::Move(float DeltaTime)
 {
 
-	if (!bMoving)
-	{
-		return;
 
-	}
 
 	
 	//AddMovementInput(MoveDirection, 1.f);
@@ -295,10 +320,24 @@ void ARTS_Unit_Base::Move(float DeltaTime)
 
 	//FRotator NewRoation = FMath::RInterpTo(GetActorRotation(), DesiredRotation, GetWorld()->GetDeltaSeconds(), 5.f);
 	//SetActorRotation(NewRoation);
+	if (!GetPathFollowingComp().GetPath())
+	{
+		return;
+	}
 	TArray<FTransform> NewTransform = MovementUtilities::CalculateMovementTransform(this, DeltaTime);
 	IsmComp->BatchUpdateInstancesTransforms(0, NewTransform);
 	IsmComp->MarkRenderStateDirty();
 	GunHandler->UpdateGuns();
+
+
+	if (TargetActor)
+	{
+		if ((TargetActor->GetActorLocation() - GetActorLocation()).Size() <= Range)
+		{
+			bChasingEnemy = false;
+			AIController->StopMovement();
+		}
+	}
 }
 
 
@@ -334,6 +373,12 @@ const AActor* ARTS_Unit_Base::GetTarget()
 }
 void ARTS_Unit_Base::SetTarget(AActor* NewTarget)
 {
+
+	if ((NewTarget->GetActorLocation() - GetActorLocation()).Size() > Range)
+	{
+		Execute_MoveToLocation(this, NewTarget->GetActorLocation());
+		bChasingEnemy = true;
+	}
 	TargetActor = NewTarget;
 	bMoving = false;
 	GunHandler->SetUpTarget(NewTarget);
@@ -342,6 +387,7 @@ void ARTS_Unit_Base::SetTarget(AActor* NewTarget)
 	{
 		CastedTarget->UnitDeathDelegate.AddUObject(this, &ThisClass::RemoveTarget);
 	}
+
 }
 void ARTS_Unit_Base::RemoveTarget(AActor*)
 {

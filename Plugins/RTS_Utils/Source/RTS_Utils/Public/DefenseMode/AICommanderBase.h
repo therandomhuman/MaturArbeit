@@ -7,6 +7,8 @@
 
 #include "Utilities/CommonUnitDataTypes.h"
 #include "GameplayTagContainer.h"
+
+#include "DefenseMode/CommonGamemodeDataTypes.h"
 #include "AICommanderBase.generated.h"
 
 
@@ -14,6 +16,7 @@
 class ARTS_Unit_Base;
 class AWaveSpawner;
 class ADefenseGameModeBase;
+
 
 UCLASS()
 class RTS_UTILS_API AAICommanderBase : public AActor
@@ -30,8 +33,9 @@ protected:
 	
 
 	//tracks all seen enemies the units have seen
+	//maybe also a struct to store more info, like who's already attacking em?????
 	UPROPERTY(EditAnywhere, Category = UnitsIntel, meta = (AllowPrivateAccess = "true"))
-	TArray<TObjectPtr<ARTS_Unit_Base>> TrackedEnemies;
+	TArray<FTrackedEnemy> TrackedEnemies;
 
 	UPROPERTY(EditAnywhere, Category = General, meta = (AllowPrivateAccess = "true"))
 	TArray<FAiUnitGroup> CurrentlyActiveUnitGroups;
@@ -45,6 +49,9 @@ protected:
 	//since I don't think the commander needs to tick it's general update function every frame I use a timer to make it tick at a slower rate
 	FTimerHandle AiCommanderTickHandle;
 
+
+	FObjective CurrentObjective;
+
 	//fuctions
 
 	void ProccessNextObjective();
@@ -52,10 +59,26 @@ protected:
 	void AddUnitGroups(TArray<FAiUnitGroup>NewUnitGroups);
 
 
-	void IssueMoveOrder(FAiUnitGroup UnitGroupToCommand, FVector Goal);
+	void IssueMoveOrder(FAiUnitGroup& UnitGroupToCommand, FVector Goal);
+
+	void IssueAttackOrder(FAiUnitGroup& UnitGroupToCommand, AActor* Goal);
+
+	void ProccessBattlefield();
+
+	void ProccessUnit(FAiUnitGroup& UnitGroupToCommand);
+
+
+	void RegisterNewEnemy(TObjectPtr<AActor>, bool bSensed);
+
+
+	//need to clean up before the unit gets removed
+	void UnitCleanUp(AActor* DeadUnit);
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
 	void SetWaveSpawner(AWaveSpawner* Spawner);
+
+
+	int32 ReturnNumberOfActiveUnitGroups();
 };

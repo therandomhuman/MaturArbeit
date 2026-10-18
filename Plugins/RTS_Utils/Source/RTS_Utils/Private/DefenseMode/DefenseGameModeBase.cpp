@@ -31,6 +31,7 @@ void ADefenseGameModeBase::BeginPlay()
        
         }
     }
+    //adapt architucrut
     //get commander
     AActor* CommanderActor = UGameplayStatics::GetActorOfClass(
         GetWorld(),
@@ -38,17 +39,11 @@ void ADefenseGameModeBase::BeginPlay()
     );
     AiCommander = Cast<AAICommanderBase>(CommanderActor);
 
-    //get wavespawner
-    AActor* WaveActor = UGameplayStatics::GetActorOfClass(
-        GetWorld(),
-        AWaveSpawner::StaticClass()
-    );
-    WaveSpawner = Cast<AWaveSpawner>(WaveActor);
-    WaveSpawner->StartUpWaves();
-    AiCommander->SetWaveSpawner(WaveSpawner);
+ 
+   
 
-    //just call wavespawner to set up wave system, it waits etc and spawn waves on it's own, it registers them etc....
-    //
+
+
     ActiveHUD = Cast<AHUDBase>(UGameplayStatics::GetPlayerController(this, 0)->GetHUD());
 
 
@@ -62,8 +57,14 @@ void ADefenseGameModeBase::HandlePointCapture(const FGameplayTag& Capturer)
         return;
     }
 
-    ActiveHUD->ToggleGameStateScreen();
+    ActiveHUD->ToggleGameStateScreen(false);
     //give signal to the ui to show end screen 
+    UGameplayStatics::SetGamePaused(GetWorld(), true);
+}
+
+void ADefenseGameModeBase::HandleWaveBeat()
+{
+    ActiveHUD->ToggleGameStateScreen(true);
     UGameplayStatics::SetGamePaused(GetWorld(), true);
 }
 
@@ -72,7 +73,35 @@ TObjectPtr<AWaveSpawner> ADefenseGameModeBase::GetWaveSpawner()
     return WaveSpawner;
 }
 
-FObjective ADefenseGameModeBase::GetCurrentObjective()
+FObjective& ADefenseGameModeBase::GetCurrentObjective()
 {
     return CurrentObjective;
+}
+
+void ADefenseGameModeBase::RegisterWaveSpawner(AWaveSpawner* WaveSpawnerToRegister)
+{
+    WaveSpawner = WaveSpawnerToRegister;
+
+
+    //since I don't know which component registers first I check in both registrations for the other one to do wave setup
+    if (!bHasStartedWave && AiCommander)
+    {
+        bHasStartedWave = true;
+        AiCommander->SetWaveSpawner(WaveSpawner);
+        WaveSpawner->StartUpWaves();
+    }
+ 
+}
+
+void ADefenseGameModeBase::RegisterAiCommander(AAICommanderBase* AiCommanderToRegister)
+{
+
+    AiCommander = AiCommanderToRegister;
+
+    if (!bHasStartedWave && WaveSpawner)
+    {
+        bHasStartedWave = true;
+        AiCommander->SetWaveSpawner(WaveSpawner);
+        WaveSpawner->StartUpWaves();
+    }
 }

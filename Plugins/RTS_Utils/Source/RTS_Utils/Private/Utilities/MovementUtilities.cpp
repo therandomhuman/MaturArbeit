@@ -98,7 +98,7 @@ TArray<FTransform> MovementUtilities::CalculateMovementTransform(TObjectPtr<ARTS
 	FTransform InstanceTransform;
 	FTransform InstanceTransformWorld;
 	FNavPathSharedPtr NavPath = Unit->GetPathFollowingComp().GetPath();
-
+	
 	TArray<FNavPathPoint> NavPathPoins = NavPath->GetPathPoints();
 
 	FVector UnitVeloc = Unit->GetVelocity() * DeltaTime * 2.f;
@@ -194,16 +194,16 @@ TArray<FTransform> MovementUtilities::CalculateMovementTransform(TObjectPtr<ARTS
 		{
 			United = United.GetSafeNormal();
 			Unit->GetWorld()->LineTraceSingleByChannel(Trace, InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()) + United * 100, ECollisionChannel::ECC_Visibility, TraceParams);
-			DrawDebugLine(Unit->GetWorld(), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()) + United * 100, FColor::Red, false, 0.5f);
+			//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()) + United * 100, FColor::Red, false, 0.5f);
 			if (Trace.bBlockingHit)
 			{
 
-				DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + United * 100, FColor::Red, false, 10.f);
+				//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + United * 100, FColor::Red, false, 10.f);
 				FVector Slide = FVector::VectorPlaneProject(United, Trace.Normal);
 
 				ObstacleAvoidance = Slide.GetSafeNormal() * 150.F;
 				ObstacleAvoidance += (InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()) - Trace.ImpactPoint).GetSafeNormal(1) * 200;
-				DrawDebugLine(Unit->GetWorld(), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()) + ObstacleAvoidance, FColor::Green, false, 4.f);
+				//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()) + ObstacleAvoidance, FColor::Green, false, 4.f);
 			}
 
 		}
@@ -218,7 +218,7 @@ TArray<FTransform> MovementUtilities::CalculateMovementTransform(TObjectPtr<ARTS
 		i.PathMods.AvoidanceModification = FVector::ZeroVector;
 
 		Unit->GetWorld()->LineTraceSingleByChannel(Trace, InstancelocationWorld + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + FVector::DownVector * Unit->CapsuleComp->GetScaledCapsuleHalfHeight() * 1, ECollisionChannel::ECC_Visibility, TraceParams);
-		DrawDebugLine(Unit->GetWorld(), InstancelocationWorld + United + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + United + FVector::DownVector * Unit->CapsuleComp->GetScaledCapsuleHalfHeight() * 1, FColor::Magenta, false, 7.f);
+		//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld + United + FVector(0, 0, Unit->CapsuleComp->GetScaledCapsuleHalfHeight()), InstancelocationWorld + United + FVector::DownVector * Unit->CapsuleComp->GetScaledCapsuleHalfHeight() * 1, FColor::Magenta, false, 7.f);
 
 		if (Trace.Distance > Unit->CapsuleComp->GetScaledCapsuleHalfHeight() and Trace.Distance < Unit->CapsuleComp->GetScaledCapsuleHalfHeight() * 2)// stuck inside 
 		{
@@ -226,14 +226,14 @@ TArray<FTransform> MovementUtilities::CalculateMovementTransform(TObjectPtr<ARTS
 
 			ObstacleAvoidance = Trace.ImpactPoint - InstancelocationWorld;
 			FinalVector += ObstacleAvoidance * DeltaTime * 10.f;
-			DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + ObstacleAvoidance, FColor::Black, false, 2.f);
+			//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + ObstacleAvoidance, FColor::Black, false, 2.f);
 		}
 		else if (Trace.bBlockingHit and Trace.Distance < Unit->CapsuleComp->GetScaledCapsuleHalfHeight())//floating
 		{
 
 			ObstacleAvoidance = Trace.ImpactPoint - InstancelocationWorld;
 			FinalVector += ObstacleAvoidance * DeltaTime * 10.f;
-			DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + ObstacleAvoidance, FColor::Purple, false, 2.f);
+		//	DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + ObstacleAvoidance, FColor::Purple, false, 2.f);
 		}
 		else if (!Trace.bBlockingHit or Trace.Distance > Unit->CapsuleComp->GetScaledCapsuleHalfHeight() * 2) // if moving towards a cliff
 		{
@@ -245,8 +245,8 @@ TArray<FTransform> MovementUtilities::CalculateMovementTransform(TObjectPtr<ARTS
 			FinalVector = ObstacleAvoidance * DeltaTime * 10.f;
 			i.PathMods.AvoidanceModification = ObstacleAvoidance;
 			Unit->SetSoldierData(i.Index, i);
-			DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + ObstacleAvoidance, FColor::Emerald, false, 2.f);
-			DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, ISM->GetComponentLocation()+ FinalVector + Instancelocation, FColor::Black, false, 3.f);
+			//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, InstancelocationWorld + ObstacleAvoidance, FColor::Emerald, false, 2.f);
+			//DrawDebugLine(Unit->GetWorld(), InstancelocationWorld, ISM->GetComponentLocation()+ FinalVector + Instancelocation, FColor::Black, false, 3.f);
 		}
 
 		

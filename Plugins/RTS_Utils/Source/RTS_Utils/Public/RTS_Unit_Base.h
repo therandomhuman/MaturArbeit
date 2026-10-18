@@ -55,10 +55,14 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+
+
+	
 	// Navigation stuff
 	FVector MoveTargetLocation = FVector::ZeroVector;
 	bool bMoving = false;
 	float MoveTolerance = 50.f;
+	bool bChasingEnemy = false;
 
 
 	//stuff for atttackng
@@ -165,6 +169,9 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
 	TSubclassOf<UUnitDataBase> UnitType = nullptr;
+	//this variable gets read from the database^^, no need to assign here
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Unit, meta = (AllowPrivateAccess = "true"))
+	int32 Range = 0;
 
 
 
